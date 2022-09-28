@@ -1,0 +1,42 @@
+﻿family_lh,family_genus,life_history_genus,Notes,Sources
+Ceratopogonidae_aquatic,Ceratopogonidae_Bezzia,aquatic,"According to Bug Guide, in Tribe Palpomyiini; larvae in this tribe are aquatic.",https://bugguide.net/node/view/543637
+Ceratopogonidae_aquatic,Ceratopogonidae_Clinohelea,aquatic,,https://bugguide.net/node/view/309587#habitat
+Ceratopogonidae_aquatic,Ceratopogonidae_Dasyhelea,aquatic,,"https://en.wikipedia.org/wiki/Dasyhelea, https://inaturalist.ca/taxa/247992-Dasyhelea"
+Ceratopogonidae_terrestrial,Ceratopogonidae_Forcipomyia,terrestrial,"eggs deposited in manure, decaying bark, and similar locations",https://bugguide.net/node/view/33219#habitat
+Ceratopogonidae_aquatic,Ceratopogonidae_Palpomyia,aquatic,"According to Bug Guide, in Tribe Palpomyiini; larvae in this tribe are aquatic.",https://bugguide.net/node/view/543637
+Crambidae_aquatic,Crambidae_Acentria,aquatic,,https://en.wikipedia.org/wiki/Acentria
+Crambidae_aquatic,Crambidae_Petrophila,aquatic,"""larvae live within silken web in fast-flowing streams""",https://bugguide.net/node/view/10981#habitat
+Empididae_aquatic,Empididae_Hilara,aquatic,,Jason Dombroskie
+Empididae_aquatic,Empididae_Rhamphomyia,aquatic,,Jason Dombroskie
+Hydrophilidae_aquatic,Hydrophilidae_Anacaena,aquatic,,"https://bugguide.net/node/view/178957, https://www.ukbeetles.co.uk/anacaena-spp"
+Hydrophilidae_terrestrial,Hydrophilidae_Cercyon,terrestrial,"Found in dung, carrion, compost, fungi, and leaf litter.",https://bugguide.net/node/view/32186; https://www.waterbugkey.vcsu.edu/php/genusdetail.php?g=Cercyon&idnum=1&ls=adult&f=Hydrophilidae
+Hydrophilidae_terrestrial,Hydrophilidae_Sphaeridium,terrestrial,Larvae feed on maggots in cow dung. In subfamily Sphaeridiinae.,"https://en.wikipedia.org/wiki/Sphaeridium, https://bugguide.net/node/view/11378"
+Hydrophilidae_aquatic,Hydrophilidae_Tropisternus,aquatic,"""One of the first hydrophilids to be found in newly formed bodies of water, such as buckets, washtubs, etc."" Larvae may eat mosquito larvae.",https://bugguide.net/node/view/15836
+Ptychopteridae_aquatic,Ptychopteridae_Ptychoptera,aquatic,larvae live in mud and silt in shallow water of streams,https://bugguide.net/node/view/8521#habitat
+Rhagionidae_aquatic,Rhagionidae_Chrysopilus,aquatic,,Jason Dombroskie
+Rhagionidae_terrestrial,Rhagionidae_Rhagio,terrestrial,,Jason Dombroskie
+Rhagionidae_terrestrial,Rhagionidae_Symphoromyia,terrestrial,,Jason Dombroskie
+Scathophagidae_terrestrial,Scathophagidae_Scathophaga,terrestrial,"For the most part, larvae feed on other insect larva within animal dung or decaying vegetable matter.",https://en.wikipedia.org/wiki/Scathophaga
+Stratiomyidae_terrestrial,Stratiomyidae_Actina,terrestrial,,Jason Dombroskie
+Stratiomyidae_aquatic,Stratiomyidae_Allognosta,aquatic,,Jason Dombroskie
+Stratiomyidae_aquatic,Stratiomyidae_Caloparyphus,aquatic,"madicolous, inhabiting a thin fim or sheet of water",Jason Dombroskie
+Stratiomyidae_terrestrial,Stratiomyidae_Chloromyia,terrestrial,,Jason Dombroskie
+Stratiomyidae_terrestrial,Stratiomyidae_Microchrysa,terrestrial,,Jason Dombroskie
+Stratiomyidae_aquatic,Stratiomyidae_Odontomyia,aquatic,,Jason Dombroskie
+Stratiomyidae_aquatic,Stratiomyidae_Stratiomys,aquatic,,Jason Dombroskie
+Syrphidae_aquatic,Syrphidae_Eristalis,aquatic,"""The larvae of Eristalis and Eristalinus species are aquatic.""","https://en.wikipedia.org/wiki/Eristalis, https://bugguide.net/node/view/7182, https://www.sciencedirect.com/topics/agricultural-and-biological-sciences/eristalis, https://www.sciencedirect.com/topics/immunology-and-microbiology/eristalis"
+Syrphidae_terrestrial,Syrphidae_Eupeodes,terrestrial,Larvae feed on aphids.,https://bugguide.net/node/view/11609
+Syrphidae_terrestrial,Syrphidae_Melanostoma,terrestrial,"In Tribe Bacchini, in which larvae are predatory, often on aphids.",https://bugguide.net/node/view/12644
+Syrphidae_aquatic,Syrphidae_Parhelophilus,aquatic,,"https://bugguide.net/node/view/33625, https://minnesotaflowerflies.com/eristalinae/parhelophilus/"
+Syrphidae_terrestrial,Syrphidae_Rhingia,terrestrial,Larvae associated with animal dung.,https://en.wikipedia.org/wiki/Rhingia
+Syrphidae_aquatic,Syrphidae_Sericomyia,aquatic,Larvae in ponds rich in decomposing vegetation; filter out microorganisms as their food.,"https://bugguide.net/node/view/8105, https://en.wikipedia.org/wiki/Sericomyia"
+Syrphidae_terrestrial,Syrphidae_Sphaerophoria,terrestrial,"Larvae feed on aphids, decaying matter.","https://bugguide.net/node/view/7321, https://www.montana.edu/yellowstoneinsects/diptera/syrphidae/sphaerophoria_sp.html"
+Syrphidae_terrestrial,Syrphidae_Toxomerus,terrestrial,"eggs laid on plants near aphids, pupation in soil cavities in spring, some larvae feed on pollen but most on aphid","https://bugguide.net/node/view/3277, https://en.wikipedia.org/wiki/Toxomerus"
+Syrphidae_terrestrial,Syrphidae_Trichopsomyia,terrestrial,Larvae feed on aphids.,"https://bugguide.net/node/view/1813787, https://en.wikipedia.org/wiki/Trichopsomyia"
+Tipulidae_aquatic,Tipulidae_Angarotipula,aquatic,,Jason Dombroskie
+Tipulidae_terrestrial,Tipulidae_Ctenophora,terrestrial,dead wood,Jason Dombroskie
+Tipulidae_terrestrial,Tipulidae_Dolichopeza,terrestrial,in mosses,Jason Dombroskie
+Tipulidae_terrestrial,Tipulidae_Nephrotoma,terrestrial,,Jason Dombroskie
+Ephydridae_terrestrial,Ephydridae_Scatella,terrestrial,Larvae live in algae on top of potting mix.,https://mrec.ifas.ufl.edu/lso/entomol/ncstate/fly5.htm
+Pediciidae_aquatic,Pediciidae_Tricyphona,aquatic,"""larvae are aquatic, living in marshes and along edges of streams.""",https://bugguide.net/node/view/32979
+Phoridae_terrestrial,Phoridae_Megaselia,terrestrial,"""larvae in moist decaying organic material, sanitation filter beds, sludge in sewer pipes and trash cans in public washrooms and homes, lab cultures of Drosophila, fresh or fermenting fruit, and sometimes in external wounds or in the digestive tract of animals, including humans.""",https://bugguide.net/node/view/40692
