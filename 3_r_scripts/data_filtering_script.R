@@ -1,11 +1,11 @@
-# Data filtering for "Predictors and consequences of diet variation in a declining
+# Data filtering for "Predictors and consequences of diet composition in a declining
 # generalist aerial insectivore"
 
 # Written by: Conor Taff and Jenny Uehling
 
-# Last updated: 9/27/2022
+# Last updated: 12/2/2023
 
-# Run under R Studio with R version 4.2.1 on a Mac
+# Run under R Studio with R version 4.3.1 on a Mac OS
 
 # This code takes raw sequence data and metadata and converts it into formats
 # useable in future analyses. It also performs basic calculations about the
@@ -70,9 +70,9 @@
 # Those three commands produce a bunch of output files, but only three are needed
 # to pull into `R` for subsequent analyses.
 
-# - trescoi_2022_09.cluster.otu_table.txt has samples in columns and OTUs in rows with reads in each cell
-# - trescoi_2022_09.cluster.taxonomy.txt has full taxonomic information for each OTU
-# - trescoi_2022_09.mapping_file.txt has one row for each sample to add metadata
+# - trescoi_2022_09r2.cluster.otu_table.txt has samples in columns and OTUs in rows with reads in each cell
+# - trescoi_2022_09r2.cluster.taxonomy.txt has full taxonomic information for each OTU
+# - trescoi_2022_09r2.mapping_file.txt has one row for each sample to add metadata
 
 # All three of these files are read into the `R` script in this repository as the 
 # basis of everything here with the addition of sample metadata.
@@ -81,7 +81,7 @@
 # of commands works to try to remove barcode bleed over where sequences from one
 # barcode/sample are accidentally attributed to other samples. There are 
 # different types of classifiers and options, etc. What we've done here is
-# (we think) the basic or bare-bones pipeline.
+# the basic or bare-bones pipeline.
 
 # Load libraries ---------------------------------------------------------------
 
@@ -146,7 +146,7 @@ extra_info <- read.csv(here("1_raw_data", "extra_samples.csv"))
 # Create a column in extra_info that has the same information as site_box_year
 extra_info$site_box_year <- paste(extra_info$Site, extra_info$Nest, extra_info$Exp_Year, sep="_")
 
-# Delete "cap_doy" column from extra_info becuase it is not needed
+# Delete "cap_doy" column from extra_info because it is not needed
 extra_info <- subset(extra_info, select = -c(cap_doy))
 
 # Reclassify columns in s_info and extra_info so they bind
@@ -212,19 +212,19 @@ write.csv(s_info, "2_modified_data/s_info.csv")
 amptk_prefix <- "trescoi"
 
 # Load the number of reads by taxa per sample table. Format for phyloseq.
-otu_ab <- read.delim(here("1_raw_data", paste0(amptk_prefix, "_2022_09.cluster.otu_table.txt")))
+otu_ab <- read.delim(here("1_raw_data", paste0(amptk_prefix, "_2022_09r2.cluster.otu_table.txt")))
 
 # P19N379 is mislabeled; it should be labelled as P19N479.
 otu_ab <- dplyr::rename(otu_ab, F05xP19N479 = F05xP19N379)
 
-rownames(otu_ab) <- otu_ab$X.OTU.ID   # give row names from sample names
-otu_ab <- otu_ab[, 2:ncol(otu_ab)]    # remove the column of sample names
+rownames(otu_ab) <- otu_ab$X.OTU.ID   # give row names from otu names
+otu_ab <- otu_ab[, 2:ncol(otu_ab)]    # remove the column of otu names
   
 # Read the mapping table
 # This 'mapping' table from AMPtk is mostly blank but has all the sample
 # names so it can be joined to actual sample metadata. It's also possible
 # to merge in the sample metadata within the AMPtk pipeline.
-map <- read.delim(here("1_raw_data", paste0(amptk_prefix, "_2022_09.mapping_file.txt")))
+map <- read.delim(here("1_raw_data", paste0(amptk_prefix, "_2022_09r2.mapping_file.txt")))
   
 # P19N379 is mislabeled; it should be labelled as P19N479.
 map$X.SampleID <- gsub("F05xP19N379", "F05xP19N479", map$X.SampleID)
@@ -238,9 +238,9 @@ for(i in 1:nrow(map)){
 # write.table(map, "map.txt", sep = "\t") # to save a copy of the mapping file
   
 # Read the otu taxonomy table
-otu_tax <- read.delim(here("1_raw_data", paste0(amptk_prefix, "_2022_09.cluster.taxonomy.txt")))
+otu_tax <- read.delim(here("1_raw_data", paste0(amptk_prefix, "_2022_09r2.cluster.taxonomy.txt")))
 rownames(otu_tax) <- otu_tax$X.OTUID
-  
+
 # The taxonomy result from AMPtk is in one long string of text. This is splitting up the string
 # and filling in a bunch of different columns. 
 for(i in 1:nrow(otu_tax)){
@@ -278,7 +278,7 @@ rownames(map_2) <- map_2$X.SampleID
 # This will identify how many samples there are in each category of site,
 # age, and capture number.
 summary_table <- map_2 %>% dplyr::count(Site, Age, Capture_Number)
-  
+
 # This will identify samples that don't match the metadata file and write them as a separate output
 missing <- subset(map_2, is.na(map_2$Individual_Band) == TRUE) # none are missing
 # write.table(missing, "missing_info.txt", sep = "\t")
@@ -385,28 +385,63 @@ coi_ps2 <- subset_samples(coi_ps2, sampleID != "P19N257") # M TH.86
 depth_no_arth_filter <- data.frame(as(sample_data(coi_ps2), "data.frame"),
                                    TotalReads = sample_sums(coi_ps2), keep.rownames = TRUE)
 
-# Take out negative controls for summary statistics
-depth_no_arth_filter_negcontrolremoved <- depth_no_arth_filter[depth_no_arth_filter$Exp_Year != "neg_control" ,]
+  ## Calculate number of adults and nests sampled ------------------------------
 
-# Sum up total number of reads
-sum(depth_no_arth_filter_negcontrolremoved$TotalReads)
+  # Determine number of adults sampled
+  length(unique(depth_no_arth_filter$Individual_Band[depth_no_arth_filter$Adult_or_Nestling == "Adult"]))
 
-# Determine the range of reads across samples
-range(depth_no_arth_filter_negcontrolremoved$TotalReads)
+  # Determine number of nests sampled
+  nestlings <- depth_no_arth_filter[depth_no_arth_filter$Adult_or_Nestling == "Nestling" ,]
+  length(unique(nestlings$site_box_year))
 
-# Determine mean and median number of reads per sample
-mean(depth_no_arth_filter_negcontrolremoved$TotalReads)
-median(depth_no_arth_filter_negcontrolremoved$TotalReads)
+  ## Negative controls ---------------------------------------------------------
 
-depth_no_arth_filter <- subset(depth_no_arth_filter_negcontrolremoved, select = c(sampleID, Individual_Band, Age, Site, Nest, TotalReads)) # for readability
-write.csv(depth_no_arth_filter, "2_modified_data/depth_no_arth_filter.csv")
+  # Extract negative controls for summary statistics
+  depth_neg_controls <- depth_no_arth_filter[depth_no_arth_filter$Adult_or_Nestling == "neg_control" ,]
+  
+  # Sum up total number of reads
+  sum(depth_neg_controls$TotalReads)
 
-# Take out blanks to examine the ASVs
-coi_ps2_noblanks <- subset_samples(coi_ps2, Exp_Year != "neg_control")
-tax_tab_examine <- data.frame(tax_table(coi_ps2_noblanks))
+  # Determine the range of reads across samples
+  range(depth_neg_controls$TotalReads)
 
-# Determine number of ASVs
-length(tax_tab_examine$kingdom)
+  # Determine mean and median number of reads per sample
+  mean(depth_neg_controls$TotalReads)
+  median(depth_neg_controls$TotalReads)
+  
+  # Examine ASVs in blanks
+  coi_ps2_blanks <- subset_samples(coi_ps2, Adult_or_Nestling == "neg_control")
+  (coi_ps2_blanks = prune_taxa(taxa_sums(coi_ps2_blanks) > 0, coi_ps2_blanks)) # take out taxa from tax_table that aren't found in blanks
+  tax_tab_examine_blanks <- data.frame(tax_table(coi_ps2_blanks))
+  
+  # Determine number of ASVs
+  length(tax_tab_examine_blanks$kingdom)
+
+  ## Fecal samples -------------------------------------------------------------
+
+  # Take out negative controls for summary statistics
+  depth_no_arth_filter_negcontrolremoved <- depth_no_arth_filter[depth_no_arth_filter$Exp_Year != "neg_control" ,]
+
+  # Sum up total number of reads
+  sum(depth_no_arth_filter_negcontrolremoved$TotalReads)
+
+  # Determine the range of reads across samples
+  range(depth_no_arth_filter_negcontrolremoved$TotalReads)
+
+  # Determine mean and median number of reads per sample
+  mean(depth_no_arth_filter_negcontrolremoved$TotalReads)
+  median(depth_no_arth_filter_negcontrolremoved$TotalReads)
+
+  depth_no_arth_filter <- subset(depth_no_arth_filter_negcontrolremoved, select = c(sampleID, Individual_Band, Age, Site, Nest, TotalReads)) # for readability
+  write.csv(depth_no_arth_filter, "2_modified_data/depth_no_arth_filter.csv")
+
+  # Examine ASVs in samples (exclude blanks)
+  coi_ps2_noblanks <- subset_samples(coi_ps2, Exp_Year != "neg_control")
+  (coi_ps2_noblanks = prune_taxa(taxa_sums(coi_ps2_noblanks) > 0, coi_ps2_noblanks)) # take out taxa from tax_table that aren't found in samples (i.e., that are only found in blanks)
+  tax_tab_examine <- data.frame(tax_table(coi_ps2_noblanks))
+
+  # Determine number of ASVs
+  length(tax_tab_examine$kingdom)
 
 # Filter to arthropods ---------------------------------------------------------
 
@@ -422,134 +457,41 @@ write.csv(unique_families, here("4_other_outputs/unique_families.csv"))
 # This file was then taken out of R to research aquatic vs. terrestrial
 # families, and will be re-imported later.
 
-# Explore families with "both" classification ----------------------------------
-
-# Using the list of unique families, populated outside of R, we identified
-# which families had both aquatic and terrestrial forms. Below, we explore which
-# of these families have identifications to the genus level in this dataset,
-# such that we might be able to identify whether the insect consumed had an
-# aquatic or terrestrial larval stage.
-
-# We used the table output from each of these families to create
-# "coi_2019_genus_IDs.xlsx" and "coi_2019_genus_IDs_for_code.csv". These files
-# contain the genera for each of these families as well as information about our
-# research about their larvae. Only the genera with larval forms identifiable as
-# aquatic or terrestrial are included in "coi_2019_genus_IDs_for_code.csv"
-
-otu_tax_arth <- as.data.frame(tax_table(coi_ps2))
-
-# Most common families:
-
-Empididae <- otu_tax_arth[otu_tax_arth$family == "Empididae" ,]
-Empididae <- Empididae %>%
-  filter(!is.na(kingdom))
-table(Empididae$genus)
-
-Rhagionidae <- otu_tax_arth[otu_tax_arth$family == "Rhagionidae" ,]
-Rhagionidae <- Rhagionidae %>%
-  filter(!is.na(kingdom))
-table(Rhagionidae$genus)
-
-Stratiomyidae <- otu_tax_arth[otu_tax_arth$family == "Stratiomyidae" ,]
-Stratiomyidae <- Stratiomyidae %>%
-  filter(!is.na(kingdom))
-table(Stratiomyidae$genus)
-
-Tipulidae <- otu_tax_arth[otu_tax_arth$family == "Tipulidae" ,]
-Tipulidae <- Tipulidae %>%
-  filter(!is.na(kingdom))
-table(Tipulidae$genus) #123/125 have identifiable genera, most common is Nephrotoma
-
-# Less common families:
-
-Ceratopogonidae <- otu_tax_arth[otu_tax_arth$family == "Ceratopogonidae" ,]
-Ceratopogonidae <- Ceratopogonidae %>%
-  filter(!is.na(kingdom))
-table(Ceratopogonidae$genus)
-
-Crambidae <- otu_tax_arth[otu_tax_arth$family == "Crambidae" ,]
-Crambidae <- Crambidae %>%
-  filter(!is.na(kingdom))
-table(Crambidae$genus)
-
-Cylindrotomidae <- otu_tax_arth[otu_tax_arth$family == "Cylindrotomidae" ,]
-Cylindrotomidae <- Cylindrotomidae %>%
-  filter(!is.na(kingdom))
-table(Cylindrotomidae$genus) # No genus IDs available
-
-Ephydridae <- otu_tax_arth[otu_tax_arth$family == "Ephydridae" ,]
-Ephydridae <- Ephydridae %>%
-  filter(!is.na(kingdom))
-table(Ephydridae$genus)
-
-Fanniidae <- otu_tax_arth[otu_tax_arth$family == "Fanniidae" ,]
-Fanniidae <- Fanniidae %>%
-  filter(!is.na(kingdom))
-table(Fanniidae$genus)
-
-Hydrophilidae <- otu_tax_arth[otu_tax_arth$family == "Hydrophilidae" ,]
-Hydrophilidae <- Hydrophilidae %>%
-  filter(!is.na(kingdom))
-table(Hydrophilidae$genus)
-
-Pediciidae <- otu_tax_arth[otu_tax_arth$family == "Pediciidae" ,]
-Pediciidae <- Pediciidae %>%
-  filter(!is.na(kingdom))
-table(Pediciidae$genus)
-
-Phoridae <- otu_tax_arth[otu_tax_arth$family == "Phoridae" ,]
-Phoridae <- Phoridae %>%
-  filter(!is.na(kingdom))
-table(Phoridae$genus)
-
-Ptychopteridae <- otu_tax_arth[otu_tax_arth$family == "Ptychopteridae" ,]
-Ptychopteridae <- Ptychopteridae %>%
-  filter(!is.na(kingdom))
-table(Ptychopteridae$genus)
-
-Saldidae <- otu_tax_arth[otu_tax_arth$family == "Saldidae" ,]
-Saldidae <- Saldidae %>%
-  filter(!is.na(kingdom))
-table(Saldidae$genus)
-
-Scathophagidae <- otu_tax_arth[otu_tax_arth$family == "Scathophagidae" ,]
-Scathophagidae <- Scathophagidae %>%
-  filter(!is.na(kingdom))
-table(Scathophagidae$genus)
-
-Syrphidae <- otu_tax_arth[otu_tax_arth$family == "Syrphidae" ,]
-Syrphidae <- Syrphidae %>%
-  filter(!is.na(kingdom))
-table(Syrphidae$genus)
-
-Tabanidae <- otu_tax_arth[otu_tax_arth$family == "Tabanidae" ,]
-Tabanidae <- Tabanidae %>%
-  filter(!is.na(kingdom))
-table(Tabanidae$genus)
-
-Tetrigidae <- otu_tax_arth[otu_tax_arth$family == "Tetrigidae" ,]
-Tetrigidae <- Tetrigidae %>%
-  filter(!is.na(kingdom))
-table(Tetrigidae$genus)
-
-# Check sample effort ----------------------------------------------------------
+# Check the number of reads across fecal samples and blanks -- FIGURE S2 -------
 
 # Histogram of sample reads. This is counting a sum of arthropod reads for each sample.
 depth <- data.frame(as(sample_data(coi_ps2), "data.frame"),
                     TotalReads = sample_sums(coi_ps2), keep.rownames = TRUE)
 
-p <- ggplot(depth, aes(log(TotalReads))) + geom_histogram(fill = "slateblue") + 
-  ylab("Count of Samples") + xlab("log(Reads)") +
-  theme_classic() + geom_vline(xintercept = log(100), linetype = "dashed", col = "coral3", size = 1) + 
-  geom_text(x = log(100) - 0.2, y = 30, label = "100 Reads", angle = 90)
+depth$Adult_or_Nestling[depth$Adult_or_Nestling == "neg_control"] <- "Negative control"
 
-p2 <- p + facet_grid(~ Adult_or_Nestling)     # same but splitting out adult/nestling/negative_control
+p <- ggplot(depth, aes(log(TotalReads))) + geom_histogram(fill = "slateblue") + 
+  ylab("Number of samples") + xlab("log(Reads)") +
+  theme_classic() + geom_vline(xintercept = log(100), linetype = "dashed", col = "coral3", size = 1) + 
+  geom_text(x = log(100) - 0.5, y = 30, label = "100 Reads", angle = 90)
+
+p2 <- p + facet_grid(~ Adult_or_Nestling) +    # same but splitting out adult/nestling/negative_control
+      theme(strip.text.x = element_text(size = 12))
 
 # Save the histograms
 ggsave(here("3_r_scripts/figs/figs_descriptive/total_reads.png"), plot = p, width = 8, height = 4.5, device = "png")
-ggsave(here("3_r_scripts/figs/figs_descriptive/total_reads_split.png"), plot = p2, width = 8.2, height = 4, device = "png")
+ggsave(here("3_r_scripts/figs/figs_descriptive/Figure_S2_total_reads_split.png"), plot = p2, width = 8.2, height = 4, device = "png")
 
-# Remove negative controls -----------------------------------------------------
+# Extract information about blanks ---------------------------------------------
+
+negative_controls <- depth[depth$Adult_or_Nestling == "Negative control" ,]
+
+# Sum up total number of reads after filtering to arthropods
+sum(negative_controls$TotalReads)
+
+# Determine the range of reads across samples
+range(negative_controls$TotalReads)
+
+# Determine mean and median number of reads per sample
+mean(negative_controls$TotalReads)
+median(negative_controls$TotalReads)
+
+# Remove blanks (negative controls) --------------------------------------------
 
 # Remove negative controls
 coi_ps2 <- subset_samples(coi_ps2, Age != "neg_control")

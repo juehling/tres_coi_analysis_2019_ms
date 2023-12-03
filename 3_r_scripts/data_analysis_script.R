@@ -1,9 +1,9 @@
-# Data analyses for "Predictors and consequences of diet variation in a 
+# Data analyses for "Predictors and consequences of diet composition in a 
 # declining generalist aerial insectivore"
 
 # Written by: Jenny Uehling and Conor Taff
-# Last updated: 9/26/2022
-# Run under R Studio 4.1.0 on a Mac OS
+# Last updated: 12/3/2023
+# Run under R Studio 4.3.1 on a Mac OS
 
 # This is the main analysis script for analyzing data after processing them
 # in the data_filtering_script.R, relative_abundance_occurrence_calculations.R,
@@ -13,18 +13,16 @@
 
   ## Install packages for McElreath's package "rethinking" to work -------------
 
-  # RStan:
+  ## RStan:
   # remove.packages(c("StanHeaders", "rstan")) # if already installed previously
   # install.packages("rstan", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
-  
-  # cmdstanr:
+  # 
+  # # cmdstanr:
   # install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
   # cmdstanr::install_cmdstan()
-  
-  # Other necessary packages and McElreath's rethinking package
+  # 
+  # # Other necessary packages and McElreath's rethinking package
   # install.packages(c("coda","mvtnorm","devtools","loo","dagitty","shape"))
-  # devtools::install_github("rmcelreath/rethinking", branch = experimental)
-  
   # devtools::install_github("rmcelreath/rethinking")
 
   ## Load packages and set ggplot theme ----------------------------------------
@@ -118,7 +116,6 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
     str(aquatic_n_day12$Mass)
     str(aquatic_n_day12$percent_aquatic_ra)
     str(aquatic_n_day12$percent_aquatic_occ)
-    str(aquatic_n_day12$percent_aquatic_occ_fam)
     str(aquatic_n_day12$simpson_psmelt)
     str(aquatic_n_day12$exp_treat)
     str(aquatic_n_day12$site_box_year)
@@ -134,7 +131,7 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
     p_exp_treat
 
     ### Model for mass ~ alpha diversity (day 12 nestlings) --------------------
-    mod_div <- lmer(Mass ~ scale(simpson_psmelt) + (1|exp_treat) + (1|site_box_year), data = aquatic_n_day12)
+    mod_div <- lmer(Mass ~ scale(simpson_psmelt)  + (1|exp_treat) + (1|site_box_year), data = aquatic_n_day12)
     summary(mod_div, ddf = "Kenward-Roger")
     # Checking conditions
     hist(resid(mod_div))
@@ -167,35 +164,17 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
       theme(axis.text.x = element_text(size = 14), axis.text.y = element_text(size = 14))
     p
     
-    ### Model for mass ~ percent aquatic, occurrence distinct taxonomic group (day 12 nestlings) --------
+    ### Model for mass ~ percent aquatic, occurrence (day 12 nestlings) --------
     mod_occ <- lmer(Mass ~ scale(percent_aquatic_occ) + (1|exp_treat) + (1|site_box_year), data = aquatic_n_day12)
     summary(mod_occ, ddf = "Kenward-Roger")
     # Checking conditions
     hist(resid(mod_occ))
     plot(mod_occ)
     
-    # Plot mass ~ percent aquatic, occurrence distinct taxonomic group (day 12 nestlings)
+    # Plot mass ~ percent aquatic, occurrence (day 12 nestlings)
     p <- ggplot(aquatic_n_day12) +
       geom_point((aes(x=percent_aquatic_occ, y=Mass))) +
       geom_smooth((aes(x=percent_aquatic_occ, y=Mass)), method=lm , se=TRUE) +
-      xlab("Proportion of nestling diet composed of aquatic insects") +
-      ylab("Mass") +
-      theme(axis.title = element_text(size = 16)) + theme(axis.text.x = element_text(size = 14)) +
-      theme(legend.title = element_text(size = 16), legend.text = element_text(size = 14)) +
-      theme(strip.text = element_text(size = 14))
-    p
-    
-    ### Model for mass ~ percent aquatic, occurrence family (day 12 nestlings) --------
-    mod_occ_fam <- lmer(Mass ~ scale(percent_aquatic_occ_fam) + (1|exp_treat) + (1|site_box_year), data = aquatic_n_day12)
-    summary(mod_occ_fam, ddf = "Kenward-Roger")
-    # Checking conditions
-    hist(resid(mod_occ))
-    plot(mod_occ)
-    
-    # Plot for mass ~ percent aquatic, occurrence family (day 12 nestlings)
-    p <- ggplot(aquatic_n_day12) +
-      geom_point((aes(x=percent_aquatic_occ_fam, y=Mass))) +
-      geom_smooth((aes(x=percent_aquatic_occ_fam, y=Mass)), method=lm , se=TRUE) +
       xlab("Proportion of nestling diet composed of aquatic insects") +
       ylab("Mass") +
       theme(axis.title = element_text(size = 16)) + theme(axis.text.x = element_text(size = 14)) +
@@ -222,7 +201,6 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
     str(aquatic_n_day12_binary$simpson_psmelt)
     str(aquatic_n_day12_binary$percent_aquatic_ra)
     str(aquatic_n_day12_binary$percent_aquatic_occ)
-    str(aquatic_n_day12_binary$percent_aquatic_occ_fam)
     str(aquatic_n_day12_binary$exp_treat)
     str(aquatic_n_day12_binary$site_box_year)
 
@@ -236,10 +214,10 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
     plot(simulationOutput)
     testDispersion(simulationOutput)
     
-    # ### Plot nestling fate ~ alpha diversity -- FIGURE 2 -----------------------
-    # commented out because this takes a long time to run
+    ### Plot nestling fate ~ alpha diversity -- FIGURE 2 -----------------------
+    # # commented out because this takes a long time to run
     # # Create the same model without scaling simpson for ease of plotting
-    # mod_div <- glmer(Nestling_Fate ~ simpson_psmelt + (1|exp_treat) + (1|site_box_year), 
+    # mod_div <- glmer(Nestling_Fate ~ simpson_psmelt + (1|exp_treat) + (1|site_box_year),
     #                  data = aquatic_n_day12_binary, family = binomial(link = "logit"),
     #                  glmerControl(optimizer = "bobyqa", optCtrl = list(maxfun = 10000000)))
     # 
@@ -266,18 +244,18 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
     # 
     # # Plot
     # p <- ggplot(data = aquatic_n_day12_binary, mapping = aes(x = simpson_psmelt, y = Nestling_Fate)) +
-    #   geom_jitter(height = 0.02, alpha = 0.7, color = "dodgerblue") +
+    #   geom_jitter(height = 0.02, alpha = 0.7, color = "#70a8e3") +
     #   theme_bw() +
     #   theme(panel.grid.minor = element_blank(), panel.grid.major = element_blank(),
     #         axis.title = element_text(size = 16), axis.text = element_text(size = 14)) +
     #   xlab("Simpson's diversity index") +
     #   ylab("Likelihood of fledging") +
     #   geom_ribbon(data = fit, inherit.aes = FALSE,
-    #               mapping = aes(x = r, ymin = lo, ymax = hi), fill = "dodgerblue", alpha = 0.5) +
+    #               mapping = aes(x = r, ymin = lo, ymax = hi), fill = "#70a8e3", alpha = 0.5) +
     #   geom_line(data = fit, inherit.aes = FALSE,
-    #             mapping = aes(x = r, y = mu), color = "dodgerblue", size = 2)
+    #             mapping = aes(x = r, y = mu), color = "#70a8e3", size = 2)
     # p
-    # ggsave(here("3_r_scripts/figs/figs_diversity/Fig_2_nd12_aq_fate_div.pdf"), p, width = 5, height = 4, device = "pdf")
+    # ggsave(here("3_r_scripts/figs/figs_diversity/Figure_2_nd12_aq_fate_div.pdf"), p, width = 5, height = 4, device = "pdf")
 
     ### Model for nestling fate ~ percent aquatic, relative abundance ----------
     mod_ra <- glmer(Nestling_Fate ~ scale(percent_aquatic_ra) + (1|exp_treat) + (1|site_box_year), 
@@ -296,7 +274,7 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
       theme(axis.title = element_text(size = 20)) + theme(axis.text = element_text(size = 16))
     p
 
-    ### Model for nestling fate ~ percent aquatic, occurrence distinct taxonomic group ------------------
+    ### Model for nestling fate ~ percent aquatic, occurrence ------------------
     mod_occ <- glmer(Nestling_Fate ~ scale(percent_aquatic_occ) + (1|exp_treat) + (1|site_box_year),
                     data = aquatic_n_day12_binary, family = binomial(link = "logit"))
     summary(mod_occ)
@@ -306,26 +284,9 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
     plot(simulationOutput)
     testDispersion(simulationOutput)
     
-    # Plot nestling fate ~ percent aquatic, occurrence distinct taxonomic group
+    # Plot nestling fate ~ percent aquatic, occurrence
     p <- ggplot(aquatic_n_day12_binary) +
       geom_boxplot(aes(x=as.character(Nestling_Fate), y=percent_aquatic_occ)) +
-      theme_classic() +
-      theme(axis.title = element_text(size = 20)) + theme(axis.text = element_text(size = 16))
-    p
-    
-    ### Model for nestling fate ~ percent aquatic, occurrence family ------------------
-    mod_occ_fam <- glmer(Nestling_Fate ~ scale(percent_aquatic_occ_fam) + (1|exp_treat) + (1|site_box_year),
-                     data = aquatic_n_day12_binary, family = binomial(link = "logit"))
-    summary(mod_occ_fam)
-    r.squaredGLMM(mod_occ_fam)
-    # Check conditions
-    simulationOutput <- simulateResiduals(fittedModel = mod_occ_fam)
-    plot(simulationOutput)
-    testDispersion(simulationOutput)
-    
-    # Plot nestling fate ~ percent aquatic, occurrence family
-    p <- ggplot(aquatic_n_day12_binary) +
-      geom_boxplot(aes(x=as.character(Nestling_Fate), y=percent_aquatic_occ_fam)) +
       theme_classic() +
       theme(axis.title = element_text(size = 20)) + theme(axis.text = element_text(size = 16))
     p
@@ -340,7 +301,6 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
     str(aquatic_n_day15$Mass)
     str(aquatic_n_day15$percent_aquatic_ra)
     str(aquatic_n_day15$percent_aquatic_occ)
-    str(aquatic_n_day15$percent_aquatic_occ_fam)
     str(aquatic_n_day15$simpson_psmelt)
     str(aquatic_n_day15$exp_treat)
     str(aquatic_n_day15$site_box_year)
@@ -389,14 +349,14 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
       theme(axis.text.x = element_text(size = 14), axis.text.y = element_text(size = 14))
     p
     
-    ### Model for mass ~ percent aquatic, occurrence distinct taxonomic group (day 15 nestlings) --------
+    ### Model for mass ~ percent aquatic, occurrence (day 15 nestlings) --------
     mod_occ <- lmer(Mass ~ scale(percent_aquatic_occ) + (1|exp_treat) + (1|site_box_year), data = aquatic_n_day15)
     summary(mod_occ, ddf = "Kenward-Roger")
     # Checking conditions
     hist(resid(mod_occ))
     plot(mod_occ)
     
-    # Plot for mass ~ percent aquatic, occurrence distinct taxonomic group (day 15 nestlings)
+    # Plot for mass ~ percent aquatic, occurrence (day 15 nestlings)
     p <- ggplot(aquatic_n_day15) +
       geom_point((aes(x=percent_aquatic_occ, y=Mass))) +
       geom_smooth((aes(x=percent_aquatic_occ, y=Mass)), method=lm , se=TRUE) +
@@ -407,24 +367,6 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
       theme(strip.text = element_text(size = 14))
     p
 
-    ### Model for mass ~ percent aquatic, occurrence family (day 15 nestlings) --------
-    mod_occ_fam <- lmer(Mass ~ scale(percent_aquatic_occ_fam) + (1|exp_treat) + (1|site_box_year), data = aquatic_n_day15)
-    summary(mod_occ_fam, ddf = "Kenward-Roger")
-    # Checking conditions
-    hist(resid(mod_occ))
-    plot(mod_occ)
-    
-    # Plot for mass ~ percent aquatic, occurrence family (day 15 nestlings)
-    p <- ggplot(aquatic_n_day15) +
-      geom_point((aes(x=percent_aquatic_occ_fam, y=Mass))) +
-      geom_smooth((aes(x=percent_aquatic_occ_fam, y=Mass)), method=lm , se=TRUE) +
-      xlab("Nestling Percent Aquatic") +
-      ylab("Mass") +
-      theme(axis.title = element_text(size = 16)) + theme(axis.text.x = element_text(size = 14)) +
-      theme(legend.title = element_text(size = 16), legend.text = element_text(size = 14)) +
-      theme(strip.text = element_text(size = 14))
-    p
-    
   ## Do nestling diet characteristics predict fledge success? (day 15) ---------
 
     ### Prepare data frame for modeling and plotting ------------------------------    
@@ -443,7 +385,6 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
     str(aquatic_n_day15_binary$simpson_psmelt)
     str(aquatic_n_day15_binary$percent_aquatic_ra)
     str(aquatic_n_day15_binary$percent_aquatic_occ)
-    str(aquatic_n_day15_binary$percent_aquatic_occ_fam)
     str(aquatic_n_day15_binary$Site)
     str(aquatic_n_day15_binary$site_box_year)
 
@@ -486,7 +427,7 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
       scale_x_discrete(labels = c("0" = "Died", "1" = "Fledged"))
     p
 
-    ### Model for nestling fate ~ percent aquatic, occurrence distinct taxonomic group ------------------
+    ### Model for nestling fate ~ percent aquatic, occurrence ------------------
     mod_occ <- glmer(Nestling_Fate ~ scale(percent_aquatic_occ) + (1|exp_treat), 
                      data = aquatic_n_day15_binary, family = binomial(link = "logit"))
     summary(mod_occ)
@@ -495,31 +436,11 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
     plot(simulationOutput)
     testDispersion(simulationOutput)
 
-    # Plot for nestling fate ~ percent aquatic, occurrence distinct taxonomic group
+    # Plot for nestling fate ~ percent aquatic, occurrence
     p <- ggplot(aquatic_n_day15_binary) +
       geom_boxplot((aes(x=as.character(Nestling_Fate), y=percent_aquatic_occ))) + 
       xlab("Fate") +
       ylab("Percent aquatic (occurrence)") +
-      theme(axis.title = element_text(size = 16)) + theme(axis.text.x = element_text(size = 14)) +
-      theme(legend.title = element_text(size = 16), legend.text = element_text(size = 14)) +
-      theme(strip.text = element_text(size = 14)) +
-      scale_x_discrete(labels = c("0" = "Died", "1" = "Fledged"))
-    p
-    
-    ### Model for nestling fate ~ percent aquatic, occurrence family ------------------
-    mod_occ_fam <- glmer(Nestling_Fate ~ scale(percent_aquatic_occ_fam) + (1|exp_treat), 
-                     data = aquatic_n_day15_binary, family = binomial(link = "logit"))
-    summary(mod_occ_fam)
-    r.squaredGLMM(mod_occ_fam)
-    simulationOutput <- simulateResiduals(fittedModel = mod_occ_fam)
-    plot(simulationOutput)
-    testDispersion(simulationOutput)
-    
-    # Plot for nestling fate ~ percent aquatic, occurrence family
-    p <- ggplot(aquatic_n_day15_binary) +
-      geom_boxplot((aes(x=as.character(Nestling_Fate), y=percent_aquatic_occ_fam))) + 
-      xlab("Fate") +
-      ylab("Percent aquatic (occurrence, family)") +
       theme(axis.title = element_text(size = 16)) + theme(axis.text.x = element_text(size = 14)) +
       theme(legend.title = element_text(size = 16), legend.text = element_text(size = 14)) +
       theme(strip.text = element_text(size = 14)) +
@@ -537,15 +458,11 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
   # Use gtools package to perform a logit transformation on percentage data (occurrence).
   aquatic_nestlingsadults$n_percent_aquatic_occ_logit <- gtools::logit(aquatic_nestlingsadults$n_percent_aquatic_occ, min = -0.0001, max = 1.0001)
 
-  # Use gtools package to perform a logit transformation on percentage data (occurrence family).
-  aquatic_nestlingsadults$n_percent_aquatic_occ_fam_logit <- gtools::logit(aquatic_nestlingsadults$n_percent_aquatic_occ_fam, min = -0.0001, max = 1.0001)
-  
   ## Prepare data frame for modeling and plotting ------------------------------
     
   # Check structure of each variable in the model to make sure it is correct
   str(aquatic_nestlingsadults$n_percent_aquatic_ra_logit)
   str(aquatic_nestlingsadults$n_percent_aquatic_occ_logit)
-  str(aquatic_nestlingsadults$n_percent_aquatic_occ_fam_logit)
   str(aquatic_nestlingsadults$n_simpson_psmelt)
   str(aquatic_nestlingsadults$Site)
   str(aquatic_nestlingsadults$n_Age)
@@ -607,12 +524,13 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
   mod_div <- lmer(n_simpson_psmelt ~ Site + scale(ad_Mass) + scale(ad_Flat_Wing) + scale(n_brood_size_sampling_time) + 
                   n_Age + (1|n_exp_treat) + (1|site_box_year),
                   data = aquatic_nestlingsadults)
+  
   # Checking conditions
   hist(resid(mod_div))
   plot(mod_div)
   summary(mod_div, ddf = "Kenward-Roger")
   anova(mod_div, ddf = "Kenward-Roger")
-  tab_model(mod_div, p.val = "kr", show.df = TRUE, file = here("3_r_scripts/model_outputs/model_outputs_diversity/ad_phen_nestling_diet_tab_div.html"))
+  tab_model(mod_div, p.val = "kr", show.df = TRUE, file = here("3_r_scripts/model_outputs/model_outputs_diversity/Table_1_ad_phen_nestling_diet_tab_div.html"))
   # Examine pairwise differences between variables
   emmeans(mod_div, list(pairwise ~ Site), adjust = "tukey", ddf = "Kenward-Roger")
   
@@ -624,8 +542,8 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
   m_eml <- pivot_longer(m_em, cols = c("lower.CL", "upper.CL"), values_to = "y")
   
   p_site <- ggplot(aquatic_nestlingsadults, (aes(x=Site, y=n_simpson_psmelt))) +
-    geom_boxplot(width = 0.25, position = position_nudge(x = -0.4), fill = "dodgerblue") + 
-    geom_jitter(width = 0.15, alpha = 0.5, shape = 16, color = "dodgerblue", size = 2) +
+    geom_boxplot(width = 0.25, position = position_nudge(x = -0.4), fill = "#70a8e3") + 
+    geom_jitter(width = 0.15, alpha = 0.5, shape = 16, color = "#70a8e3", size = 2) +
     xlab("Site") +
     ylab("Simpson's diversity index") +
     theme(axis.title = element_text(size = 16)) + theme(axis.text.x = element_text(angle = 90, size = 14)) +
@@ -634,8 +552,8 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
     theme(axis.text.y = element_text(size = 14)) +
     scale_x_discrete(labels = c("Turkey_Hill" = "Turkey Hill", "Unit_1" = "Unit 1", 
                                 "Unit_2" = "Unit 2", "Unit_4" = "Unit 4"))
-  p_site2 <- p_site + geom_line(data = m_eml, mapping = aes(x = Site, y = y), color = "dodgerblue", size = 1) +
-    geom_point(data = m_em, mapping = aes(x = Site, y = emmean), color = "dodgerblue", size = 4, shape = 23, fill = "dodgerblue")
+  p_site2 <- p_site + geom_line(data = m_eml, mapping = aes(x = Site, y = y), color = "#70a8e3", size = 1) +
+    geom_point(data = m_em, mapping = aes(x = Site, y = emmean), color = "#70a8e3", size = 4, shape = 23, fill = "#70a8e3")
   p_site2
   
   ## Model for nestling percent aquatic, relative abundance ~ adult phenotype -----
@@ -647,7 +565,7 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
   plot(mod_ra)
   summary(mod_ra, ddf = "Kenward-Roger")
   anova(mod_ra, ddf = "Kenward-Roger")
-  tab_model(mod_ra, p.val = "kr", show.df = TRUE, file = here("3_r_scripts/model_outputs/model_outputs_relativeabundance/ad_phen_nestling_diet_mod_tab_ra.html"))
+  tab_model(mod_ra, p.val = "kr", show.df = TRUE, file = here("3_r_scripts/model_outputs/model_outputs_relativeabundance/Table_2_ad_phen_nestling_diet_mod_tab_ra.html"))
   # Examine pairwise differences between variables
   emmeans(mod_ra, list(pairwise ~ n_Age), adjust = "tukey", ddf = "Kenward-Roger")
   
@@ -659,20 +577,21 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
   m_eml <- pivot_longer(m_em, cols = c("lower.CL", "upper.CL"), values_to = "y")
   
   p_age <- ggplot(aquatic_nestlingsadults, (aes(x=as.factor(n_Age), y=n_percent_aquatic_ra))) +
-    geom_boxplot(width = 0.25, position = position_nudge(x = -0.3), fill = "dodgerblue", outlier.shape = NA) + 
-    geom_jitter(width = 0.12, alpha = 0.5, shape = 16, color = "dodgerblue", size = 2) +
+    geom_boxplot(width = 0.25, position = position_nudge(x = -0.3), fill = "#70a8e3", outlier.shape = NA) + 
+    geom_jitter(width = 0.12, alpha = 0.5, shape = 16, color = "#70a8e3", size = 2) +
     xlab("Nestling age (days)") +
     ylab(paste0("Proportion of nestling diet", "\n", "composed of aquatic insects")) +
     theme(axis.title.x = element_text(size = 16)) + theme(axis.text.x = element_text(size = 14)) +
     theme(axis.title.y = element_text(size = 16)) + theme(axis.text.x = element_text(size = 14)) +
     theme(axis.text.y = element_text(size = 14)) +
     theme(strip.text = element_text(size = 14))
-  p_age2 <- p_age + geom_line(data = m_eml, mapping = aes(x = n_Age, y = inv.logit(y, min = -0.0001, max = 1.0001)), position = position_nudge(x = 0.3), col = "dodgerblue", size = 1) +
-    geom_point(data = m_em, mapping = aes(x = n_Age, y = inv.logit(emmean, min = -0.0001, max = 1.0001)), size = 4, shape = 23, position = position_nudge(x = 0.3), fill = "dodgerblue")
+  p_age2 <- p_age + geom_line(data = m_eml, mapping = aes(x = n_Age, y = inv.logit(y, min = -0.0001, max = 1.0001)), position = position_nudge(x = 0.3), col = "#70a8e3", size = 1) +
+    geom_point(data = m_em, mapping = aes(x = n_Age, y = inv.logit(emmean, min = -0.0001, max = 1.0001)), size = 4, shape = 23, position = position_nudge(x = 0.3), fill = "#70a8e3")
   p_age2
-  ggsave(here("3_r_scripts/figs/figs_relativeabundance/Fig_3_nestling_age_ra.pdf"), p_age2, width = 5, height = 5, device = "pdf")
+  ggsave(here("3_r_scripts/figs/figs_relativeabundance/Figure_3_nestling_age_ra.pdf"), p_age2, width = 5, height = 5, device = "pdf")
 
-  ## Model for nestling percent aquatic, occurrence distinct taxonomic group ~ adult phenotype ----------
+  ## Model for nestling percent aquatic, occurrence ~ adult phenotype ----------
+  
   mod_occ <- lmer(n_percent_aquatic_occ_logit ~ Site + scale(ad_Mass) + scale(ad_Flat_Wing) + scale(n_brood_size_sampling_time) +
                 n_Age + (1|n_exp_treat) + (1|site_box_year),
                 data = aquatic_nestlingsadults)
@@ -681,61 +600,31 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
   plot(mod_occ)
   summary(mod_occ, ddf = "Kenward-Roger")
   anova(mod_occ, ddf = "Kenward-Roger")
-  tab_model(mod_occ, p.val = "kr", show.df = TRUE, file = here("3_r_scripts/model_outputs/model_outputs_occurrence/ad_phen_nestling_diet_mod_tab_occ.html"))
+  tab_model(mod_occ, p.val = "kr", show.df = TRUE, file = here("3_r_scripts/model_outputs/model_outputs_occurrence/Table_3_ad_phen_nestling_diet_mod_tab_occ.html"))
   # Examine pairwise differences between variables
   emmeans(mod_occ, list(pairwise ~ Site), adjust = "tukey", ddf = "Kenward-Roger")
   emmeans(mod_occ, list(pairwise ~ n_Age), adjust = "tukey", ddf = "Kenward-Roger")
   
-  # Plot percent aquatic, occurrence distinct taxonomic group ~ site
+  # Plot percent aquatic, occurrence ~ site
   p_occ_site <- ggplot(aquatic_nestlingsadults) +
     geom_boxplot((aes(x=Site, y=n_percent_aquatic_occ)))
   p_occ_site
   
-  # Plot percent aquatic, occurrence distinct taxonomic group ~ nestling age
+  # Plot percent aquatic, occurrence ~ nestling age
   m_em <- as.data.frame(emmeans(mod_occ, "n_Age", lmer.df = "Kenward-Roger"))
   m_eml <- pivot_longer(m_em, cols = c("lower.CL", "upper.CL"), values_to = "y")
   
   p_age <- ggplot(aquatic_nestlingsadults, (aes(x=as.factor(n_Age), y=n_percent_aquatic_occ))) +
-    geom_boxplot(width = 0.25, position = position_nudge(x = -0.4), fill = "dodgerblue") + 
-    geom_jitter(width = 0.15, alpha = 0.5, shape = 16, color = "dodgerblue", size = 2) +
+    geom_boxplot(width = 0.25, position = position_nudge(x = -0.4), fill = "#70a8e3") + 
+    geom_jitter(width = 0.15, alpha = 0.5, shape = 16, color = "#70a8e3", size = 2) +
     xlab("Nestling Age") +
     ylab("Proportion of nestling diet composed of aquatic insects") +
     theme(axis.title = element_text(size = 16)) + theme(axis.text.x = element_text(angle = 90, size = 14)) +
     theme(legend.title = element_text(size = 16), legend.text = element_text(size = 14)) +
     theme(axis.text.y = element_text(size = 14)) +
     theme(strip.text = element_text(size = 14))
-  p_age2 <- p_age + geom_line(data = m_eml, mapping = aes(x = n_Age, y = inv.logit(y, min = -0.0001, max = 1.0001)), col = "dodgerblue", size = 1) +
-    geom_point(data = m_em, mapping = aes(x = n_Age, y = inv.logit(emmean, min = -0.0001, max = 1.0001)), color = "dodgerblue", size = 4, shape = 23, fill = "dodgerblue")
-  p_age2
-  
-  ## Model for nestling percent aquatic, occurrence family ~ adult phenotype ----------
-  mod_occ_fam <- lmer(n_percent_aquatic_occ_fam_logit ~ Site + scale(ad_Mass) + scale(ad_Flat_Wing) + scale(n_brood_size_sampling_time) +
-                    n_Age + (1|n_exp_treat) + (1|site_box_year),
-                    data = aquatic_nestlingsadults)
-  # Checking conditions
-  hist(resid(mod_occ_fam))
-  plot(mod_occ_fam) # weird
-  summary(mod_occ_fam, ddf = "Kenward-Roger")
-  anova(mod_occ_fam, ddf = "Kenward-Roger")
-  tab_model(mod_occ_fam, p.val = "kr", show.df = TRUE, file = here("3_r_scripts/model_outputs/model_outputs_occurrence_family/ad_phen_nestling_diet_mod_tab_occ_fam.html"))
-  # Examine pairwise differences between variables
-  emmeans(mod_occ_fam, list(pairwise ~ n_Age), adjust = "tukey", ddf = "Kenward-Roger")
-  
-  # Plot percent aquatic, occurrence family ~ nestling age
-  m_em <- as.data.frame(emmeans(mod_occ_fam, "n_Age", lmer.df = "Kenward-Roger"))
-  m_eml <- pivot_longer(m_em, cols = c("lower.CL", "upper.CL"), values_to = "y")
-  
-  p_age <- ggplot(aquatic_nestlingsadults, (aes(x=as.factor(n_Age), y=n_percent_aquatic_occ_fam))) +
-    geom_boxplot(width = 0.25, position = position_nudge(x = -0.4), fill = "dodgerblue") + 
-    geom_jitter(width = 0.15, alpha = 0.5, shape = 16, color = "dodgerblue", size = 2) +
-    xlab("Nestling Age") +
-    ylab("Proportion of nestling diet composed of aquatic insects") +
-    theme(axis.title = element_text(size = 16)) + theme(axis.text.x = element_text(angle = 90, size = 14)) +
-    theme(legend.title = element_text(size = 16), legend.text = element_text(size = 14)) +
-    theme(axis.text.y = element_text(size = 14)) +
-    theme(strip.text = element_text(size = 14))
-  p_age2 <- p_age + geom_line(data = m_eml, mapping = aes(x = n_Age, y = inv.logit(y, min = -0.0001, max = 1.0001)), col = "dodgerblue", size = 1) +
-    geom_point(data = m_em, mapping = aes(x = n_Age, y = inv.logit(emmean, min = -0.0001, max = 1.0001)), color = "dodgerblue", size = 4, shape = 23, fill = "dodgerblue")
+  p_age2 <- p_age + geom_line(data = m_eml, mapping = aes(x = n_Age, y = inv.logit(y, min = -0.0001, max = 1.0001)), col = "#70a8e3", size = 1) +
+    geom_point(data = m_em, mapping = aes(x = n_Age, y = inv.logit(emmean, min = -0.0001, max = 1.0001)), color = "#70a8e3", size = 4, shape = 23, fill = "#70a8e3")
   p_age2
   
   ## Examination of day 12 and day 15 patterns with individual ID --------------
@@ -757,7 +646,7 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
   hist(resid(mod_div))
   plot(mod_div)
   summary(mod_div, ddf = "Kenward-Roger")
-  anova(mod_div)
+  anova(mod_div, ddf = "Kenward-Roger")
   
   mod_ra <- lmer(n_percent_aquatic_ra_logit ~ Site + scale(ad_Mass) + scale(ad_Flat_Wing) + scale(n_brood_size_sampling_time) + 
                    n_Age + (1|n_Individual_Band) + (1|n_exp_treat) + (1|site_box_year),
@@ -766,7 +655,7 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
   hist(resid(mod_ra))
   plot(mod_ra)
   summary(mod_ra, ddf = "Kenward-Roger")
-  anova(mod_ra)
+  anova(mod_ra, ddf = "Kenward-Roger")
   
   mod_occ <- lmer(n_percent_aquatic_occ_logit ~ Site + scale(ad_Mass) + scale(ad_Flat_Wing) + scale(n_brood_size_sampling_time) +
                     n_Age + (1|n_Individual_Band) + (1|n_exp_treat) + (1|site_box_year),
@@ -775,7 +664,7 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
   hist(resid(mod_occ))
   plot(mod_occ)
   summary(mod_occ, ddf = "Kenward-Roger")
-  anova(mod_occ)
+  anova(mod_occ, ddf = "Kenward-Roger")
   
   # Broadly see the same patterns.
 
@@ -791,9 +680,6 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
   # Use gtools package to perform a logit transformation on percentage data (occurrence)
   aquatic_adF$percent_aquatic_occ_logit <- gtools::logit(aquatic_adF$percent_aquatic_occ, min = -0.0001, max = 1.0001)
   
-  # Use gtools package to perform a logit transformation on percentage data (occurrence family)
-  aquatic_adF$percent_aquatic_occ_fam_logit <- gtools::logit(aquatic_adF$percent_aquatic_occ_fam, min = -0.0001, max = 1.0001)
-
   # Some third capture females do not have wing measurements, so import the wing measurements from their first capture
   # However, some of these first wing measurements are recorded during captures when there was not a
   # fecal sample taken. We need to go back into the raw data to extract what we need.
@@ -887,10 +773,34 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
     }
   }
   
+  ## Calculate mass change between captures ------------------------------------
+  
+  aquatic_adF$mass_change <- NA
+  
+  for (i in 1:length(aquatic_adF$sampleID)){
+    if (aquatic_adF$Capture_Number[i] == "2"){
+      ID <- aquatic_adF$Individual_Band[i]
+      # need to use captures dataframe because females didn't always have fecal sample collected during capture,
+      # but they still had mass measured.
+      ID <- as.character(ID)
+      cap1_mass_step1 <- captures$Mass[captures$Individual_Band == ID & captures$Capture_Number == "1"]
+      cap2_mass_step1 <- captures$Mass[captures$Individual_Band == ID & captures$Capture_Number == "2"]
+      change_step1 <- cap2_mass_step1 - cap1_mass_step1
+      aquatic_adF$mass_change[i] <- change_step1}
+    if (aquatic_adF$Capture_Number[i] == "3"){
+      ID <- aquatic_adF$Individual_Band[i]
+      ID <- as.character(ID)
+      cap1_mass_step2 <- captures$Mass[captures$Individual_Band == ID & captures$Capture_Number == "1"]
+      cap3_mass_step2 <- captures$Mass[captures$Individual_Band == ID & captures$Capture_Number == "3"]
+      change_step2 <- cap3_mass_step2 - cap1_mass_step2
+      aquatic_adF$mass_change[i] <- change_step2}
+      }
+
   # Check structure of each variable in the model to make sure it is correct
   str(aquatic_adF$Site)
   str(aquatic_adF$Flat_Wing)
   str(aquatic_adF$Mass)
+  str(aquatic_adF$mass_change)
   str(aquatic_adF$Capture_Number)
   aquatic_adF$Capture_Number <- as.factor(aquatic_adF$Capture_Number)
   str(aquatic_adF$Capture_Number)
@@ -899,11 +809,13 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
   str(aquatic_adF$site_box_year)
   str(aquatic_adF$percent_aquatic_ra_logit)
   str(aquatic_adF$percent_aquatic_occ_logit)
-  str(aquatic_adF$percent_aquatic_occ_fam_logit)
   str(aquatic_adF$simpson_psmelt)
+  
+  # Save a separate dataset to use for mass change
+  aquatic_adF_mass_change <- aquatic_adF[!is.na(aquatic_adF$mass_change) ,]
 
-  ## Plot the relationship between various metrics and percent aquatic, relative abundance. ----
-  # This could also be done subbing in percent aquatic occurrence, occurrence family, and/or diversity.
+  ## Plot the relationship between various metrics and percent aquatic relative abundance. ----
+  # This could also be done subbing in percent aquatic occurrence and/or diversity.
   # We're looking to make sure there aren't any big abnormalities in predictor variables here.
 
   # Plot mass + percent aquatic
@@ -960,14 +872,12 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
   plot(mod_div)
   summary(mod_div, ddf = "Kenward-Roger")
   anova(mod_div, ddf = "Kenward-Roger")
-  tab_model(mod_div, p.val = "kr", show.df = TRUE, file = here("3_r_scripts/model_outputs/model_outputs_diversity/ad_phen_ad_diet_tab_mod_div.html"))
+  tab_model(mod_div, p.val = "kr", show.df = TRUE, file = here("3_r_scripts/model_outputs/model_outputs_diversity/Table_4_ad_phen_ad_diet_tab_mod_div.html"))
   # Examine pairwise differences between variables
   emtrends(mod_div, pairwise ~ Capture_Number, var = "Mass", ddf = "Kenward-Roger")
   emmip(mod_div, Capture_Number ~ Mass, cov.reduce = range, ddf = "Kenward-Roger")
   
- 
-  
-  # ## Plot adult diversity ~ mass + stage -- FIGURE 4 ---------------------------------------
+  ## Plot adult diversity ~ mass + stage -- FIGURE 4 ---------------------------------------
   # commented out because this takes a long time to run
   # # Create the same model without scaling simpson for ease of plotting
   # mod_div <- lmer(simpson_psmelt ~ Site + Flat_Wing + Mass*Capture_Number + (1|exp_treat) + (1|site_box_year),
@@ -1024,19 +934,19 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
   # 
   # p_mass <- ggplot(aquatic_adF, (aes(x=Mass, y=simpson_psmelt, color = Capture_Number, fill = Capture_Number))) +
   #   geom_point() +
-  #   scale_fill_manual(values = c("brown", "lightpink3", "lightpink1")) +
+  #   scale_fill_manual(values = c("#6b1939", "lightpink3", "lightpink1")) +
   #   scale_color_manual(name = "Breeding stage",
   #                      labels = c("Mid incubation", "Late incubation", "Provisioning"),
-  #                      values = c("brown", "lightpink3", "lightpink1")) +
+  #                      values = c("#6b1939", "lightpink3", "lightpink1")) +
   #   guides(fill = "none") +
   #   xlab("Mass (g)") +
   #   ylab("Simpson's diversity index") +
   #   theme(axis.title = element_text(size = 16)) + theme(axis.text = element_text(size = 14)) +
   #   theme(legend.title = element_text(size = 16), legend.text = element_text (size = 14)) +
   #   geom_ribbon(data = fit_cap1, inherit.aes = FALSE,
-  #               mapping = aes(x = r, ymin = lo, ymax = hi), fill = "brown", alpha = 0.5) +
+  #               mapping = aes(x = r, ymin = lo, ymax = hi), fill = "#6b1939", alpha = 0.5) +
   #   geom_line(data = fit_cap1, inherit.aes = FALSE,
-  #             mapping = aes(x = r, y = mu), color = "brown", size = 2) +
+  #             mapping = aes(x = r, y = mu), color = "#6b1939", size = 2) +
   #   geom_ribbon(data = fit_cap2, inherit.aes = FALSE,
   #             mapping = aes(x = r, ymin = lo, ymax = hi), fill = "lightpink3", alpha = 0.5) +
   #   geom_line(data = fit_cap2, inherit.aes = FALSE,
@@ -1047,8 +957,25 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
   #             mapping = aes(x = r, y = mu), color = "lightpink1", size = 2)
   # 
   # p_mass
-  # ggsave(here("3_r_scripts/figs/figs_diversity/Fig_4_mom_mass_mom_div.pdf"), p_mass, width = 7, height = 5, device = "pdf")
+  # ggsave(here("3_r_scripts/figs/figs_diversity/Figure_4_mom_mass_mom_div.pdf"), p_mass, width = 7, height = 5, device = "pdf")
 
+  ## Model for adult alpha diversity ~ adult phenotype -- mass change -------------
+
+  mod_div <- lmer(simpson_psmelt ~ Site + scale(Flat_Wing) + scale(mass_change) + (1|treat_time_of_capture),
+                  data = aquatic_adF_mass_change[aquatic_adF_mass_change$Capture_Number == "3" ,])
+  
+  # Checking conditions
+  hist(resid(mod_div))
+  plot(mod_div)
+  summary(mod_div, ddf = "Kenward-Roger")
+  anova(mod_div, ddf = "Kenward-Roger")
+  tab_model(mod_div, p.val = "kr", show.df = TRUE, file = here("3_r_scripts/model_outputs/model_outputs_diversity/Table_S3_ad_phen_ad_diet_tab_mod_div_mass_change.html"))
+  
+  p <- ggplot(aquatic_adF_mass_change[aquatic_adF_mass_change$Capture_Number == "3" ,], 
+              aes(x=mass_change, y = simpson_psmelt)) + geom_point() +
+    geom_smooth(method=lm) + theme_classic()
+  p
+  
   ## Model for adult percent aquatic, relative abundance ~ adult phenotype -----
   mod_ra <- lmer(percent_aquatic_ra_logit ~ Site + scale(Flat_Wing) + scale(Mass)*Capture_Number + (1|treat_time_of_capture) + (1|site_box_year),
                data = aquatic_adF)
@@ -1057,7 +984,7 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
   plot(mod_ra)
   summary(mod_ra, ddf = "Kenward-Roger")
   anova(mod_ra, ddf = "Kenward-Roger")
-  tab_model(mod_ra, p.val = "kr", show.df = TRUE, file = here("3_r_scripts/model_outputs/model_outputs_relativeabundance/ad_phen_ad_diet_tab_mod_ra.html"))
+  tab_model(mod_ra, p.val = "kr", show.df = TRUE, file = here("3_r_scripts/model_outputs/model_outputs_relativeabundance/Table_5_ad_phen_ad_diet_tab_mod_ra.html"))
   # Examine pairwise differences between variables
   emmeans(mod_ra, list(pairwise ~ Site), adjust = "tukey", ddf = "Kenward-Roger")
   
@@ -1066,7 +993,19 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
     geom_boxplot((aes(x=Site, y=percent_aquatic_ra_logit)))
   p_ra_site
 
-  ## Model for adult percent aquatic, occurrence distinct taxonomic group ~ adult phenotype -------------
+  ## Model for adult percent aquatic, relative abundance ~ adult phenotype -- mass change -------------
+  
+  mod_ra <- lmer(percent_aquatic_ra_logit ~ Site + scale(Flat_Wing) + scale(mass_change) + (1|treat_time_of_capture),
+                  data = aquatic_adF_mass_change[aquatic_adF_mass_change$Capture_Number == "3" ,])
+  
+  # Checking conditions
+  hist(resid(mod_ra))
+  plot(mod_ra)
+  summary(mod_ra, ddf = "Kenward-Roger")
+  anova(mod_ra, ddf = "Kenward-Roger")
+  tab_model(mod_ra, p.val = "kr", show.df = TRUE, file = here("3_r_scripts/model_outputs/model_outputs_relativeabundance/Table_S4_ad_phen_ad_diet_tab_mod_ra_mass_change.html"))
+  
+  ## Model for adult percent aquatic, occurrence ~ adult phenotype -------------
   mod_occ <- lmer(percent_aquatic_occ_logit ~ Site + scale(Flat_Wing) + scale(Mass)*Capture_Number + (1|treat_time_of_capture) + (1|site_box_year),
                 data = aquatic_adF)
   # Checking conditions
@@ -1074,17 +1013,19 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
   plot(mod_occ)
   summary(mod_occ, ddf = "Kenward-Roger")
   anova(mod_occ, ddf = "Kenward-Roger")
-  tab_model(mod_occ, p.val = "kr", show.df = TRUE, file = here("3_r_scripts/model_outputs/model_outputs_occurrence/ad_phen_ad_diet_tab_mod_occ.html"))
+  tab_model(mod_occ, p.val = "kr", show.df = TRUE, file = here("3_r_scripts/model_outputs/model_outputs_occurrence/Table_6_ad_phen_ad_diet_tab_mod_occ.html"))
 
-  ## Model for adult percent aquatic, occurrence family ~ adult phenotype -------------
-  mod_occ_fam <- lmer(percent_aquatic_occ_fam_logit ~ Site + scale(Flat_Wing) + scale(Mass)*Capture_Number + (1|treat_time_of_capture) + (1|site_box_year),
-                  data = aquatic_adF)
+  ## Model for adult percent aquatic, occurrence ~ adult phenotype -- mass change ------
+  
+  mod_occ <- lmer(percent_aquatic_occ_logit ~ Site + scale(Flat_Wing) + scale(mass_change) + (1|treat_time_of_capture),
+                 data = aquatic_adF_mass_change[aquatic_adF_mass_change$Capture_Number == "3" ,])
+  
   # Checking conditions
-  hist(resid(mod_occ_fam))
-  plot(mod_occ_fam)
-  summary(mod_occ_fam, ddf = "Kenward-Roger")
-  anova(mod_occ_fam, ddf = "Kenward-Roger")
-  tab_model(mod_occ_fam, p.val = "kr", show.df = TRUE, file = here("3_r_scripts/model_outputs/model_outputs_occurrence_family/ad_phen_ad_diet_tab_mod_occ_fam.html"))
+  hist(resid(mod_occ))
+  plot(mod_occ)
+  summary(mod_occ, ddf = "Kenward-Roger")
+  anova(mod_occ, ddf = "Kenward-Roger")
+  tab_model(mod_occ, p.val = "kr", show.df = TRUE, file = here("3_r_scripts/model_outputs/model_outputs_occurrence/Table_S5_ad_phen_ad_diet_tab_mod_occ_mass_change.html"))
   
 # How do male and female diets differ? -----------------------------------------
 
@@ -1099,12 +1040,13 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
   # Use gtools package to perform a logit transformation on percentage data
   adults_compare$percent_aquatic_ra_logit <- gtools::logit(adults_compare$percent_aquatic_ra, min = -0.0001, max = 1.0001)
   adults_compare$percent_aquatic_occ_logit <- gtools::logit(adults_compare$percent_aquatic_occ, min = -0.0001, max = 1.0001)
-  adults_compare$percent_aquatic_occ_fam_logit <- gtools::logit(adults_compare$percent_aquatic_occ_fam, min = -0.0001, max = 1.0001)
   
+  # Remove male 259122557's first sample (P19N008) from analyses because he was accidentally captured during incubation
+  adults_compare <- adults_compare[adults_compare$sampleID != "P19N008" ,]
+
   str(adults_compare$simpson_psmelt)
   str(adults_compare$percent_aquatic_ra_logit)
   str(adults_compare$percent_aquatic_occ_logit)
-  str(adults_compare$percent_aquatic_occ_fam_logit)
   str(adults_compare$Sex)
   str(adults_compare$site_box_year)
   
@@ -1134,25 +1076,16 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
     theme(axis.title = element_text(size = 26)) + theme(axis.text.x = element_text(size = 26), 
                                                         axis.text.y = element_text(size = 18)) +
     theme(legend.position = "none") +
-    theme(strip.text = element_text(size = 24)) +
-    scale_fill_manual(values=c("orange", "gray"))
+    theme(strip.text = element_text(size = 24))
   p_ra
 
-  ## Model for percent aquatic, occurrence distinct taxonomic group ~ Sex -------------------------------
+  ## Model for percent aquatic, occurrence ~ Sex -------------------------------
   mod_occ <- lmer(percent_aquatic_occ_logit ~ Sex + (1|exp_treat) + (1|site_box_year), data = adults_compare)
   summary(mod_occ, ddf = "Kenward-Roger")
   anova(mod_occ, ddf = "Kenward-Roger")
   # Checking conditions
   hist(resid(mod_occ))
   plot(mod_occ)
-  
-  ## Model for percent aquatic, occurrence family ~ Sex -------------------------------
-  mod_occ_fam <- lmer(percent_aquatic_occ_fam_logit ~ Sex + (1|exp_treat) + (1|site_box_year), data = adults_compare)
-  summary(mod_occ_fam, ddf = "Kenward-Roger")
-  anova(mod_occ_fam, ddf = "Kenward-Roger")
-  # Checking conditions
-  hist(resid(mod_occ_fam))
-  plot(mod_occ_fam)
 
 # Do adults and nestlings differ in their diet variation? ----------------------
   
@@ -1171,17 +1104,18 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
   # Bind together all of these samples from provisioning
   aquatic_prov <- rbind(aquatic_prov_adF, aquatic_prov_adM, aquatic_prov_nestlings)
   
+  # Remove male 259122557's first sample (P19N008) from analyses because he was accidentally captured during incubation
+  aquatic_prov <- aquatic_prov[aquatic_prov$sampleID != "P19N008" ,]
+  
   # Use gtools package to perform a logit transformation on percentage data
   aquatic_prov$percent_aquatic_ra_logit <- gtools::logit(aquatic_prov$percent_aquatic_ra, min = -0.0001, max = 1.0001)
   aquatic_prov$percent_aquatic_occ_logit <- gtools::logit(aquatic_prov$percent_aquatic_occ, min = -0.0001, max = 1.0001)
-  aquatic_prov$percent_aquatic_occ_fam_logit <- gtools::logit(aquatic_prov$percent_aquatic_occ_fam, min = -0.0001, max = 1.0001)
-  
+
   # Check the structure of each variable before modeling
   str(aquatic_prov$bird_category)
   str(aquatic_prov$site_box_year)
   str(aquatic_prov$percent_aquatic_ra_logit)
   str(aquatic_prov$percent_aquatic_occ_logit)
-  str(aquatic_prov$percent_aquatic_occ_fam_logit)
   str(aquatic_prov$simpson_psmelt)
   str(aquatic_prov$exp_treat)
 
@@ -1189,7 +1123,7 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
   mod_div <- lmer(simpson_psmelt ~ bird_category + (1|exp_treat) + (1|site_box_year), data = aquatic_prov)
   summary(mod_div, ddf = "Kenward-Roger")
   anova(mod_div, ddf = "Kenward-Roger")
-  tab_model(mod_div, p.val = "kr", show.df = TRUE, file = here("3_r_scripts/model_outputs/model_outputs_diversity/bird_category_div.html"))
+  tab_model(mod_div, p.val = "kr", show.df = TRUE, file = here("3_r_scripts/model_outputs/model_outputs_diversity/Table_7_part_1_bird_category_div.html"))
   # Checking conditions
   hist(resid(mod_div))
   plot(mod_div)
@@ -1210,8 +1144,8 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
     theme(legend.title = element_text(size = 16), legend.text = element_text(size = 14)) +
     theme(strip.text = element_text(size = 14)) +
     theme(legend.position="none") +
-    scale_color_manual(values = c("Adult" = "lightpink", "Nestling" = "dodgerblue")) +
-    scale_fill_manual(values = c("Adult" = "lightpink", "Nestling" = "dodgerblue"))
+    scale_color_manual(values = c("Adult" = "lightpink", "Nestling" = "#70a8e3")) +
+    scale_fill_manual(values = c("Adult" = "lightpink", "Nestling" = "#70a8e3"))
   p_div2 <- p_div + geom_line(data = m_eml, mapping = aes(x = bird_category, y = y, color = bird_category), size = 1) +
     geom_point(data = m_em, mapping = aes(x = bird_category, y = emmean), size = 4, shape = 23)
   p_div2
@@ -1220,7 +1154,7 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
   mod_ra <- lmer(percent_aquatic_ra_logit ~ bird_category + (1|exp_treat) + (1|site_box_year), data = aquatic_prov)
   summary(mod_ra, ddf = "Kenward-Roger")
   anova(mod_ra, ddf = "Kenward-Roger")
-  tab_model(mod_ra, p.val = "kr", show.df = TRUE, file = here("3_r_scripts/model_outputs/model_outputs_relativeabundance/bird_category_ra.html"))
+  tab_model(mod_ra, p.val = "kr", show.df = TRUE, file = here("3_r_scripts/model_outputs/model_outputs_relativeabundance/Table_7_part_2_bird_category_ra.html"))
   # Checking conditions
   hist(resid(mod_ra))
   plot(mod_ra)
@@ -1244,8 +1178,8 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
     theme(strip.text = element_text(size = 14)) +
     theme(axis.text.y = element_text(size = 14)) +
     theme(legend.position="none") +
-    scale_color_manual(values = c("Adult_F" = "lightpink", "Adult_M" = "orange", "Nestling" = "dodgerblue")) +
-    scale_fill_manual(values = c("Adult_F" = "lightpink", "Adult_M" = "orange", "Nestling" = "dodgerblue"))
+    scale_color_manual(values = c("Adult_F" = "lightpink", "Adult_M" = "orange", "Nestling" = "#70a8e3")) +
+    scale_fill_manual(values = c("Adult_F" = "lightpink", "Adult_M" = "orange", "Nestling" = "#70a8e3"))
   p_ra2 <- p_ra + geom_line(data = m_eml, mapping = aes(x = bird_category, y = inv.logit(y, min = -0.0001, max = 1.0001), color = bird_category), size = 1) +
     geom_point(data = m_em, mapping = aes(x = bird_category, y = inv.logit(emmean, min = -0.0001, max = 1.0001)), size = 4, shape = 23)
   p_ra2
@@ -1257,7 +1191,7 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
   # Checking conditions
   hist(resid(mod_occ))
   plot(mod_occ)
-  tab_model(mod_occ, p.val = "kr", show.df = TRUE, file = here("3_r_scripts/model_outputs/model_outputs_occurrence/bird_category_occ.html"))
+  tab_model(mod_occ, p.val = "kr", show.df = TRUE, file = here("3_r_scripts/model_outputs/model_outputs_occurrence/Table_7_part_3_bird_category_occ.html"))
   # Post hoc pairwise comparisons
   emmeans(mod_occ, list(pairwise ~  bird_category), adjust = "tukey", ddf = "Kenward-Roger")
   
@@ -1279,24 +1213,8 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
     theme(strip.text = element_text(size = 14)) +
     theme(axis.text.y = element_text(size = 14)) +
     theme(legend.position="none") +
-    scale_color_manual(values = c("Adult_F" = "lightpink", "Adult_M" = "orange", "Nestling" = "dodgerblue")) +
-    scale_fill_manual(values = c("Adult_F" = "lightpink", "Adult_M" = "orange", "Nestling" = "dodgerblue"))
+    scale_color_manual(values = c("Adult_F" = "lightpink", "Adult_M" = "orange", "Nestling" = "#70a8e3")) +
+    scale_fill_manual(values = c("Adult_F" = "lightpink", "Adult_M" = "orange", "Nestling" = "#70a8e3"))
   p_occ2 <- p_occ + geom_line(data = m_eml, mapping = aes(x = bird_category, y = inv.logit(y, min = -0.0001, max = 1.0001), color = bird_category), size = 1) +
     geom_point(data = m_em, mapping = aes(x = bird_category, y = inv.logit(emmean, min = -0.0001, max = 1.0001)), size = 4, shape = 23)
   p_occ2
-
-  ## Model for percent aquatic, occurrence family ~ bird category  ---------------------
-  mod_occ_fam <- lmer(percent_aquatic_occ_fam_logit ~ bird_category + (1|exp_treat) + (1|site_box_year), data = aquatic_prov)
-  summary(mod_occ_fam, ddf = "Kenward-Roger")
-  anova(mod_occ_fam, ddf = "Kenward-Roger")
-  # Checking conditions
-  hist(resid(mod_occ_fam))
-  plot(mod_occ_fam)
-  tab_model(mod_occ_fam, p.val = "kr", show.df = TRUE, file = here("3_r_scripts/model_outputs/model_outputs_occurrence_family/bird_category_occ_fam.html"))
-  # Post hoc pairwise comparisons
-  emmeans(mod_occ_fam, list(pairwise ~  bird_category), adjust = "tukey", ddf = "Kenward-Roger")
-  
-  # Plot for percent aquatic, occurrence family ~ bird category
-  p_occ <- ggplot(aquatic_prov) +
-    geom_boxplot((aes(x=bird_category, y=percent_aquatic_occ_fam)))
-  p_occ

@@ -1,9 +1,9 @@
 # Calculation of fecal sample alpha diversity for "Predictors and 
-# consequences of diet variation in a declining generalist aerial insectivore"
+# consequences of diet composition in a declining generalist aerial insectivore"
 
 # Written by: Jenny Uehling and Conor Taff
-# Last updated: 9/26/2022
-# Run under R Studio with R version 4.1.0 on a Mac
+# Last updated: 11/5/2023
+# Run under R Studio with R version 4.3.1 on a Mac OS
 
 # This code takes the phyloseq object coi_ps2, created in data_filtering_script.R,
 # and performs calculations to determine the alpha diversity of each fecal sample.
@@ -37,23 +37,6 @@ s_info <- read.csv("2_modified_data/s_info.csv")
 # Agglomerate to family
 coi_fam2 <- tax_glom(coi_ps2, taxrank = "family")
 
-# Rarefaction plots ------------------------------------------------------------
-
-## Plot rarefaction curves with rarecurve function from vegan package.
-# We're doing this to figure out a reasonable number of minimum reads for each sample.
-# We'll remove any samples with less than a certain number of reads.
-# Split out into nestlings and adults for readability
-
-# Nestling curves
-coi_fam2_nestling <- subset_samples(coi_fam2, Adult_or_Nestling == "Nestling")
-rarecurve(t(otu_table(coi_fam2_nestling)),step=10,label=FALSE,cex=0.5,xlim=c(0,500), ylab="Families")
-title("Nestlings")
-
-# Adult curves
-coi_fam2_adult <- subset_samples(coi_fam2, Adult_or_Nestling == "Adult")
-rarecurve(t(otu_table(coi_fam2_adult)),step=10,label=FALSE,cex=0.5,xlim=c(0,500), ylab="Families")
-title("Adults")
-
 # Filter samples, ASVs based on read counts ------------------------------------
 
 # Create a record of the sequencing depth of each sample before pruning
@@ -61,8 +44,7 @@ depth_preprune <- data.frame(as(sample_data(coi_fam2), "data.frame"),
                                      TotalReads = sample_sums(coi_fam2), keep.rownames = TRUE)
 depth_preprune <- subset(depth_preprune, select = c(sampleID, Individual_Band, Age, Site, Nest, TotalReads)) # for readability
 
-# Remove OTUs with less than 10 reads across all samples
-# Is this removing families with less than 10 reads across all samples? Or OTUs?
+# Remove ASVs with less than 10 reads across all samples
 coi_ps2 <- prune_taxa(taxa_sums(coi_fam2) > 10, coi_fam2) # Based on Hoenig et al. 2020 and Forsman et al. 2022
 
 # Remove samples with less than 100 total reads per sample
@@ -72,40 +54,6 @@ coi_ps2 <- prune_samples(sample_sums(coi_ps2) >= 100, coi_ps2)
 depth_postprune <- data.frame(as(sample_data(coi_ps2), "data.frame"),
                               TotalReads = sample_sums(coi_ps2), keep.rownames = TRUE)
 depth_postprune <- subset(depth_postprune, select = c(sampleID, Individual_Band, Age, Site, Nest, TotalReads)) # for readability
-
-# Examine sequencing depth differences pre vs. post filtering ------------------
-
-# Here, we examine how the ratio of arthropods to other living things compared in
-# our sequences, and how filtering changed our sequencing depths. We use objects
-# and datasets created and saved in the data_filtering_script.R
-
-## Arthropod reads vs. all reads comparison ----------------------------------
-# This is a duplicate of what's in the relative_abundance_occurrence_calculations.R
-# script, except it's examining with the data agglomerated to family rather than
-# "distinct taxonomic unit." This returns the same results; it's an additional 
-# "reality check" of the data.
-
-# Read in sequencing depths without arthropod filter, from data_filtering_script.R
-depth_no_arth_filter <- read.csv("2_modified_data/depth_no_arth_filter.csv")
-
-# Rename column to indicate all reads
-depth_no_arth_filter <- dplyr::rename(depth_no_arth_filter,
-                                      TotalReadsAll = TotalReads)
-
-# Merge all reads dataset with only arthropods dataset
-depth_examine <- merge(depth_preprune, depth_no_arth_filter)
-
-# Examine the percent of reads retained when filtering just to arthropod
-depth_examine$percent_retained <- depth_examine$TotalReads/depth_examine$TotalReadsAll
-mean(depth_examine$percent_retained)
-range(depth_examine$percent_retained)
-
-# Plot the total reads without filtering to arthropod vs. with filtering to arthropod
-p <- ggplot(depth_examine, aes(x=TotalReadsAll, y = TotalReads)) + geom_point() +
-  theme_classic() + xlab("Total reads without filtering to Arthropod") +
-  ylab("Total reads filtering to Arthropod") +
-  theme(axis.title=element_text(size = 18))
-p
 
 # Explore alpha diversity ------------------------------------------------------
 
@@ -123,12 +71,12 @@ coi_ps2_psmelt_wide <- coi_ps2_psmelt %>% pivot_wider(
 )
 coi_ps2_psmelt_wide <- coi_ps2_psmelt_wide %>% remove_rownames %>% column_to_rownames(var="sampleID") # Make row names sampleIDs
 
-# Calculate shannon index
+# Calculate Shannon index
 shannon_psmelt <- diversity(coi_ps2_psmelt_wide, index = "shannon")
 shannon_psmelt <- data.frame(shannon_psmelt)
 shannon_psmelt <- rownames_to_column(shannon_psmelt, "sampleID")
 
-# Calculate simpson index
+# Calculate Simpson index
 simpson_psmelt <- diversity(coi_ps2_psmelt_wide, index = "simpson")
 simpson_psmelt <- data.frame(simpson_psmelt)
 simpson_psmelt <- rownames_to_column(simpson_psmelt, "sampleID")
@@ -165,12 +113,12 @@ coi_ps2_rar150_wide <- coi_ps2_rar150 %>% pivot_wider(
 )
 coi_ps2_rar150_wide <- coi_ps2_rar150_wide %>% remove_rownames %>% column_to_rownames(var="sampleID") # Make row names sampleIDs
 
-# Calculate shannon index
+# Calculate Shannon index
 shannon_150 <- diversity(coi_ps2_rar150_wide, index = "shannon")
 shannon_150 <- data.frame(shannon_150)
 shannon_150 <- rownames_to_column(shannon_150, "sampleID")
 
-# Calculate simpson index
+# Calculate Simpson index
 simpson_150 <- diversity(coi_ps2_rar150_wide, index = "simpson")
 simpson_150 <- data.frame(simpson_150)
 simpson_150 <- rownames_to_column(simpson_150, "sampleID")
@@ -200,12 +148,12 @@ coi_ps2_rar100_wide <- coi_ps2_rar100 %>% pivot_wider(
 )
 coi_ps2_rar100_wide <- coi_ps2_rar100_wide %>% remove_rownames %>% column_to_rownames(var="sampleID") # Make row names sampleIDs
 
-# Calculate shannon index
+# Calculate Shannon index
 shannon_100 <- diversity(coi_ps2_rar100_wide, index = "shannon")
 shannon_100 <- data.frame(shannon_100)
 shannon_100 <- rownames_to_column(shannon_100, "sampleID")
 
-# Calculate simpson index
+# Calculate Simpson index
 simpson_100 <- diversity(coi_ps2_rar100_wide, index = "simpson")
 simpson_100 <- data.frame(simpson_100)
 simpson_100 <- rownames_to_column(simpson_100, "sampleID")
@@ -235,12 +183,12 @@ coi_ps2_rar50_wide <- coi_ps2_rar50 %>% pivot_wider(
 )
 coi_ps2_rar50_wide <- coi_ps2_rar50_wide %>% remove_rownames %>% column_to_rownames(var="sampleID") # Make row names sampleIDs
 
-# Calculate shannon index
+# Calculate Shannon index
 shannon_50 <- diversity(coi_ps2_rar50_wide, index = "shannon")
 shannon_50 <- data.frame(shannon_50)
 shannon_50 <- rownames_to_column(shannon_50, "sampleID")
 
-# Calculate simpson index
+# Calculate Simpson index
 simpson_50 <- diversity(coi_ps2_rar50_wide, index = "simpson")
 simpson_50 <- data.frame(simpson_50)
 simpson_50 <- rownames_to_column(simpson_50, "sampleID")

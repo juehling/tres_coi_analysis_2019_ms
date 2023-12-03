@@ -1,9 +1,9 @@
-# Calculation of aquatic insect relative abundance for "Predictors and 
-# consequences of diet variation in a declining generalist aerial insectivore"
+# Calculation of proportion of swallow diets composed of aquatic insects for "Predictors and 
+# consequences of diet composition in a declining generalist aerial insectivore"
 
 # Written by: Jenny Uehling and Conor Taff
-# Last updated: 9/26/2022
-# Run under R Studio with R version 4.1.0 on a Mac
+# Last updated: 12/3/2023
+# Run under R Studio with R version 4.3.1 on a Mac OS
 
 # This code takes the phyloseq object coi_ps2, created in data_filtering_script.R,
 # and performs calculations to determine the percentage of each fecal sample
@@ -36,35 +36,6 @@ coi_ps2 <- readRDS("2_modified_data/coi_ps2.rds")
 # analyses. It was created in data_filtering_script.R
 s_info <- read.csv("2_modified_data/s_info.csv")
 
-# Add in genera information when available -------------------------------------
-
-# In data_filtering_script.R, I identified which families that had both aquatic
-# and terrestrial larval stages could be further identified to the genus level.
-# From there, we researched each genus to determine whether information was available
-# about the larval stage of that genus (i.e., whether it was aquatic or terrestrial).
-# I prepared a .csv outside of R with this information, when it was available.
-
-# Import .csv
-life_history_genera <- read.csv(here("4_other_outputs", "coi_2019_genus_IDs_for_code.csv")) # prepared outside of R
-
-# Make a tax_table with "family_genus" to use for merging life history stage information
-tax_table_genera <- as.data.frame(tax_table(coi_ps2))
-tax_table_genera$family_genus <- paste(tax_table_genera$family, tax_table_genera$genus, sep = "_")
-
-# Join life history information with tax_table
-otu_lh_genera <- plyr::join(tax_table_genera, life_history_genera, "family_genus", "left")
-rownames(otu_lh_genera) <- rownames(tax_table(coi_ps2))
-
-# Save genera information in new phyloseq object -------------------------------
-
-# Import this as the new tax_table in coi_ps2
-
-coi_ps2 <- phyloseq(
-  otu_table(coi_ps2),
-  tax_table(as.matrix(otu_lh_genera)),
-  sample_data(coi_ps2)
-)
-
 # Add in family life history information ---------------------------------------
 
 # Import the rest of the information we have about the larval stage of each
@@ -76,38 +47,15 @@ life_history_family <- read.csv(here("4_other_outputs", "unique_families_aquatic
 # Join tax_table from coi_ps2 and family life history .csv
 otu_lh <- plyr::join(as.data.frame(tax_table(coi_ps2)), life_history_family, by = "family", type = "left")
 
-# Make column with life history information to use in analyses -----------------
-
-# Create columns to store information for use in analyses
-otu_lh$family_for_analysis <- NA
-otu_lh$life_history_for_analysis <- NA
-
-# For loop -- pull out life history at genus level if available
-for (i in 1:length(otu_lh$kingdom)){
-  if (is.na(otu_lh$family_lh[i]) == FALSE){
-    otu_lh$family_for_analysis[i] <- otu_lh$family_genus[i]
-    otu_lh$life_history_for_analysis[i] <- otu_lh$life_history_genus[i]
-  }
-  # If genus info not available, use life history at family level
-  else{
-    otu_lh$family_for_analysis[i] <- otu_lh$family[i]
-    otu_lh$life_history_for_analysis[i] <- otu_lh$life_history[i]
-  }
-}
-
 # For readability, subset just to columns needed in analysis
-otu_lh <- subset(otu_lh, select = c(kingdom, phylum, class, order, family, genus, species,
-                                    family_genus, family_lh, life_history_genus,
-                                    life_history, life_history_for_analysis, family_for_analysis))
+otu_lh <- subset(otu_lh, select = c(kingdom, phylum, class, order, family, genus, species, life_history))
 
 rownames(otu_lh) <- rownames(tax_table(coi_ps2))
 
 # When agglomerating to a specific taxonomic level, phyloseq deletes everything
 # after that taxonomic level in the order of the columns. Therefore, we have to put
-# "life_history_for_analysis" before "family", and "family_for_analysis" before
-# genus, species, etc.
-col_order <- c("kingdom", "phylum", "class", "order", "family", "life_history_for_analysis", "family_for_analysis", "genus", "species",
-               "family_genus", "family_lh", "life_history_genus", "life_history")
+# "life_history" before "family."
+col_order <- c("kingdom", "phylum", "class", "order", "life_history", "family", "genus", "species")
 otu_lh <- otu_lh[, col_order]
 
 # Save all life history information in new phyloseq object ---------------------
@@ -121,12 +69,8 @@ coi_ps2 <- phyloseq(
 
 # Agglomerate taxa -------------------------------------------------------------
 
-# Agglomerate to family, using modified family classifications with
-# some families with aquatic vs. terrestrial subsets (for identifying life history)
-coi_fam2 <- tax_glom(coi_ps2, taxrank = "family_for_analysis")
-
-# Agglomerate to family -- for occurrence calculations
-coi_fam_for_occ <- tax_glom(coi_ps2, taxrank = "family")
+# Agglomerate to family
+coi_fam2 <- tax_glom(coi_ps2, taxrank = "family")
 
 # Rarefaction plots ------------------------------------------------------------
 
@@ -139,24 +83,18 @@ coi_fam_for_occ <- tax_glom(coi_ps2, taxrank = "family")
 
 # Nestling curves
 coi_fam2_nestling <- subset_samples(coi_fam2, Adult_or_Nestling == "Nestling")
-rarecurve(t(otu_table(coi_fam2_nestling)),step=10,label=FALSE,cex=0.5,xlim=c(0,500), ylab="Families")
+# Must first put OTUs in columns as per vegan standards.
+veg_tab_nestling <- otu_table(coi_fam2_nestling)
+class(veg_tab_nestling) <- "matrix"
+rarecurve(t(veg_tab_nestling),step=10,label=FALSE,cex=0.5,xlim=c(0,500), ylab="Families")
 title("Nestlings")
 
 # Adult curves
 coi_fam2_adult <- subset_samples(coi_fam2, Adult_or_Nestling == "Adult")
-rarecurve(t(otu_table(coi_fam2_adult)),step=10,label=FALSE,cex=0.5,xlim=c(0,500), ylab="Families")
-title("Adults")
-
-# Create curves with coi_fam_for_occ object
-
-# Nestling curves
-coi_fam_for_occ_nestling <- subset_samples(coi_fam_for_occ, Adult_or_Nestling == "Nestling")
-rarecurve(t(otu_table(coi_fam_for_occ_nestling)),step=10,label=FALSE,cex=0.5,xlim=c(0,500), ylab="Families")
-title("Nestlings")
-
-# Adult curves
-coi_fam_for_occ_adult <- subset_samples(coi_fam_for_occ, Adult_or_Nestling == "Adult")
-rarecurve(t(otu_table(coi_fam_for_occ_adult)),step=10,label=FALSE,cex=0.5,xlim=c(0,500), ylab="Families")
+# Must first put OTUs in columns as per vegan standards.
+veg_tab_adult <- otu_table(coi_fam2_adult)
+class(veg_tab_adult) <- "matrix"
+rarecurve(t(veg_tab_adult),step=10,label=FALSE,cex=0.5,xlim=c(0,500), ylab="Families")
 title("Adults")
 
 # Filter samples, ASVs based on read counts, relative abundance ----------------
@@ -183,36 +121,8 @@ coi_ra2 <- transform_sample_counts(coi_ps2, function(x) x / sum(x))
 # Transform to occurrence
 coi_occ <- transform_sample_counts(coi_ra2, function(x) ceiling(x))
 
-# Limit to distinct taxonomic groups in 20% of samples
+# Limit to families in 20% of samples
 coi_20 <- prune_taxa(genefilter_sample(coi_occ, filterfun_sample(function(x) x > 0), A = 0.2 * nsamples(coi_occ)), coi_occ)
-
-# Filter samples, ASVs based on read counts, relative abundance -- for occurrence ----------------
-
-# This second set of filtering steps was done for purposes of making a dataframe to calculate
-# percent aquatic via occurrence, only to the family level. This will therefore not incorporate information from
-# the genera-level identifications of life history.
-
-# Create a record of the sequencing depth of each sample before pruning
-depth_preprune_for_occ <- data.frame(as(sample_data(coi_fam_for_occ), "data.frame"),
-                                     TotalReads = sample_sums(coi_fam_for_occ), keep.rownames = TRUE)
-depth_preprune_for_occ <- subset(depth_preprune_for_occ, select = c(sampleID, Individual_Band, Age, Site, Nest, TotalReads)) # for readability
-
-# Remove ASVs with less than 10 reads across all samples
-coi_ps2_for_occ <- prune_taxa(taxa_sums(coi_fam_for_occ) > 10, coi_fam_for_occ) # Based on Hoenig et al. 2020 and Forsman et al. 2022
-
-# Remove samples with less than 100 total reads per sample
-coi_ps2_for_occ <- prune_samples(sample_sums(coi_ps2_for_occ) >= 100, coi_ps2_for_occ)
-
-# Create a record of the sequencing depth of each sample before transforming to relative abundance
-depth_postprune_for_occ <- data.frame(as(sample_data(coi_ps2_for_occ), "data.frame"),
-                              TotalReads = sample_sums(coi_ps2_for_occ), keep.rownames = TRUE)
-depth_postprune_for_occ <- subset(depth_postprune_for_occ, select = c(sampleID, Individual_Band, Age, Site, Nest, TotalReads)) # for readability
-
-# Transform to relative abundance
-coi_ra2_for_occ <- transform_sample_counts(coi_ps2_for_occ, function(x) x / sum(x))
-
-# Transform to occurrence
-coi_occ_fam <- transform_sample_counts(coi_ra2_for_occ, function(x) ceiling(x))
 
 # Examine sequencing depth differences pre vs. post filtering ------------------
 
@@ -302,8 +212,6 @@ plot_ra <- psmelt(coi_ra2)
 
 plot_occ <- psmelt(coi_occ)
 
-plot_occ_fam <- psmelt(coi_occ_fam)
-
 coi_20_df <- psmelt(coi_20)
 
 # Identify families' mean relative abundance, other stats about dataset --------
@@ -335,51 +243,12 @@ for (i in 1:length(family_raw$family)){
   mean_rel_ab_families[i,1] <- fam
   mean_rel_ab_families[i,2] <- mean_relab
 }
-
-# Extract distinct taxonomic group families for analysis (i.e., families with genera attached if
-# it helps us ID aquatic vs. terrestrial)
-family <- unique(plot_ra$family_for_analysis)
-family <- as.data.frame(family)
-
-# Add in life history information
-family <- dplyr::rename(family,
-                            family_genus = family)
-family <- merge(family, life_history_genera, by = "family_genus", all.x = TRUE, all.y = FALSE)
-table(family$life_history_genus)
-
-# 34 of "distinct taxonomic groups" are IDed to genus level, all others at family level
-# 34/201 = 14.3%
-# Look through "family" dataframe to see which of both families could always be
-# IDed to genus level for life history identification.
-
-# All Phoridae were in the genus Megaselia
-# All Ptychopteridae were in genus Ptychoptera
-# All Scathophagidae were in genus Scathophaga
-# All Stratiomyidae were identifiable to genus.
-
-# Change name of column back
-family <- dplyr::rename(family,
-                        family = family_genus)
-
-# Create data frame to store mean relative abundance information for distinct taxonomic group families
-mean_rel_ab_families_distinct_tax_group <- data.frame(matrix(NA, ncol = 2, nrow = length(family$family)))
-
-for (i in 1:length(family$family)){
-  fam <- family$family[i]
-  plot_ra_fam <- plot_ra[plot_ra$family_for_analysis == fam ,]
-  tot <- sum(plot_ra_fam$Abundance)
-  mean_relab <- tot/num_sam
-  mean_rel_ab_families_distinct_tax_group[i,1] <- fam
-  mean_rel_ab_families_distinct_tax_group[i,2] <- mean_relab
-}
-
-# Figure out the relative abundance of  distinct taxonomic groups that are IDed to genus
-to_genus <- family[family$family %like% "_" ,]
-to_genus <- to_genus$family
-mean_to_genus <- mean_rel_ab_families_distinct_tax_group[is.element(mean_rel_ab_families_distinct_tax_group$X1, to_genus) ,]
-sum(mean_to_genus$X2)
+# Examine mean_rel_ab_families table to determine mean values for each family.
 
 # Summarize number of samples across categories in final dataset ---------------
+
+# The information extracted in this section is reported in the text of the manuscript
+# or was used to populate Table S1 and Table S2
 
 sampleID <- unique(plot_ra$sampleID)
 samples <- as.data.frame(sampleID)
@@ -388,14 +257,30 @@ uniq_indiv <- as.data.frame(unique(plot_ra$Individual_Band))
 table(samples_info$Adult_or_Nestling)
 table(samples_info$Age)
 table(samples_info$Sex)
-indiv_samples <- as.data.frame(table(samples_info$Individual_Band))
-table(indiv_samples$Freq)
+
+# Break down the number of samples per individual by adult and nestling
+# Adults
+adults_samples_info <- samples_info[samples_info$Adult_or_Nestling == "Adult" ,]
+table(adults_samples_info$Sex, adults_samples_info$Site, adults_samples_info$Capture_Number)
+table(adults_samples_info$Capture_Number, adults_samples_info$Sex)
+indiv_samples_adults <- as.data.frame(table(adults_samples_info$Individual_Band))
+table(indiv_samples_adults$Freq)
+# Nestlings
+nestlings_samples_info <- samples_info[samples_info$Adult_or_Nestling == "Nestling" ,]
+table(nestlings_samples_info$Age)
+table(nestlings_samples_info$Age, nestlings_samples_info$Site)
+# Figure out how many samples were taken per box
+nest_boxes <- nestlings_samples_info[c("Site", "site_box_year")]
+nest_boxes_unique <- unique(nest_boxes)
+table(nest_boxes_unique$Site)
+indiv_samples_nestlings <- as.data.frame(table(nestlings_samples_info$Individual_Band))
+table(indiv_samples_nestlings$Freq) # 151 + 25 = 176 banded nestlings with samples
 
 # Plot Patterns: Taxonomic Groups ----------------------------------------------
 
-## Examine occurrence of distinct taxonomic group families found in 20% or more of samples split by age ----- 
+## Examine occurrence of families found in 20% or more of samples split by age ----- 
 
-# Figure out how many distinct taxonomic group families occurred in 20% or more of the samples
+# Figure out how many families occurred in 20% or more of the samples
 table(coi_20_df$sampleID)
 
 # Calculate number of nestlings and adults to use for determining percentages of samples
@@ -405,7 +290,7 @@ num_ad <- nrow(coi_20_df_uniq[coi_20_df_uniq$Adult_or_Nestling == "Adult" ,])
 num_nestl <- nrow(coi_20_df_uniq[coi_20_df_uniq$Adult_or_Nestling == "Nestling" ,])
 
 # Plot adults and nestlings together
-p_all <- ggplot(coi_20_df, aes(x=family_for_analysis, y=(Abundance/(num_ad + num_nestl))*100, fill = life_history_for_analysis)) +
+p_all <- ggplot(coi_20_df, aes(x=family, y=(Abundance/(num_ad + num_nestl)), fill = life_history)) +
   geom_bar(stat = "identity") +
   theme_classic() +
   ylab("Percentage of samples with arthropod family (%)") +
@@ -413,44 +298,44 @@ p_all <- ggplot(coi_20_df, aes(x=family_for_analysis, y=(Abundance/(num_ad + num
   theme(axis.text.x = element_text(angle = 55, hjust = 1, size = 12)) +
   theme(plot.title = element_text(size = 14))
 
-# Figure out order for distinct taxonomic group families on the x axis
-fams_20 <- unique(coi_20_df$family_for_analysis)
+# Figure out order for families on the x axis
+fams_20 <- unique(coi_20_df$family)
 order_for_axis <- data.frame(matrix(NA, ncol = 2, nrow = length(fams_20)))
 num_sam <- length(coi_20_df_uniq$sampleID)
 
 for (i in 1:length(fams_20)){
   fam <- fams_20[i]
-  coi_20_df_fam <- coi_20_df[coi_20_df$family_for_analysis == fam ,]
+  coi_20_df_fam <- coi_20_df[coi_20_df$family == fam ,]
   tot <- sum(coi_20_df_fam$Abundance)
   percent_samples <- tot/num_sam
   order_for_axis[i,1] <- fam
   order_for_axis[i,2] <- percent_samples
 }
 
-# Order dataframe based on relative abundance of distinct taxonomic families
+# Order dataframe based on relative abundance of families
 order_for_axis <- order_for_axis[order(-order_for_axis$X2) ,]
 
 # Save for use in x-axis ordering
 order_for_axis_list <- as.character(order_for_axis$X1)
 
-# Plot distinct taxonomic group families found in over 20% of samples, in adults and nestlings
-p_adults <- ggplot(coi_20_df[coi_20_df$Adult_or_Nestling == "Adult" ,], aes(x=family_for_analysis, y=(Abundance/num_ad)*100, fill = life_history_for_analysis)) +
+# Plot families found in over 20% of samples, in adults and nestlings
+p_adults <- ggplot(coi_20_df[coi_20_df$Adult_or_Nestling == "Adult" ,], aes(x=family, y=(Abundance/num_ad), fill = life_history)) +
   geom_bar(stat = "identity") +
   theme_classic() +
   scale_x_discrete(limits = order_for_axis_list) + 
-  ylab("Percentage of samples with arthropod family (%)") +
+  ylab("Proportion of samples with family") +
   scale_fill_manual(values = c("aquatic" = "skyblue1", "terrestrial" = "palegreen3", "both" = "tan4")) +
   theme(legend.title = element_blank()) +
   ggtitle("Adults") +
   theme(plot.title = element_text(size = 14))
 
-p_nestlings <- ggplot(coi_20_df[coi_20_df$Adult_or_Nestling == "Nestling" ,], aes(x=family_for_analysis, y=(Abundance/num_nestl)*100, fill = life_history_for_analysis)) +
+p_nestlings <- ggplot(coi_20_df[coi_20_df$Adult_or_Nestling == "Nestling" ,], aes(x=family, y=(Abundance/num_nestl), fill = life_history)) +
   geom_bar(stat = "identity") +
   theme_classic() +
-  theme(axis.text.x = element_text(angle = 55, hjust = 1, size = 10)) +
+  theme(axis.text.x = element_text(angle = 55, hjust = 1, size = 12)) +
   scale_x_discrete(limits = order_for_axis_list) + 
   xlab("Family") +
-  ylab("Percentage of samples with arthropod family (%)") +
+  ylab("Proportion of samples with family") +
   scale_fill_manual(values = c("aquatic" = "skyblue1", "terrestrial" = "palegreen3", "both" = "tan4")) +
   ggtitle("Nestlings") +
   theme(plot.title = element_text(size = 14))
@@ -467,20 +352,20 @@ fig_a <- ggarrange(p_adults + rremove("ylab") + rremove("xlab") +
                  common.legend = TRUE, legend = "right",
                  align = "h")
 
-fig_a <- annotate_figure(fig_a, left = textGrob("Percentage of samples with arthropod family (%)", rot = 90, vjust = 1, gp = gpar(cex = 2)),
-                bottom = textGrob("Arthropod distinct taxonomic group", gp = gpar(cex = 2)))
+fig_a <- annotate_figure(fig_a, left = textGrob("Proportion of samples with family", rot = 90, vjust = 1, gp = gpar(cex = 2)),
+                bottom = textGrob("Arthropod family", gp = gpar(cex = 2)))
 
 fig_a
 
 # Save combined figure
-ggsave(here("3_r_scripts/figs/figs_descriptive/common_families.pdf"), width = 5, height = 7, device = "pdf")
+ggsave(here("3_r_scripts/figs/figs_descriptive/common_families.pdf"), width = 7, height = 7, device = "pdf")
 
 ## Examine relative abundance of top 15 families with highest relative abundance split by age -----
 
-# Order dataframe based on relative abundance of distinct taxonomic group families
-order_for_axis <- mean_rel_ab_families_distinct_tax_group[order(-mean_rel_ab_families_distinct_tax_group$X2) ,]
+# Order dataframe based on relative abundance of families
+order_for_axis <- mean_rel_ab_families[order(-mean_rel_ab_families$X2) ,]
 
-# Cut off only 15 most common distinct taxonomic group families
+# Cut off only 15 most common families
 order_for_axis <- order_for_axis[1:15,]
 
 # Save for use in x-axis ordering
@@ -492,27 +377,27 @@ plot_ra_uniq <- unique(plot_ra_uniq)
 num_ad <- nrow(plot_ra_uniq[plot_ra_uniq$Adult_or_Nestling == "Adult" ,])
 num_nestl <- nrow(plot_ra_uniq[plot_ra_uniq$Adult_or_Nestling == "Nestling" ,])
 
-# Plot distinct taxonomic group families with highest relative abundance, in adults and nestlings
-p_adults <- ggplot(plot_ra[plot_ra$Adult_or_Nestling == "Adult" ,], aes(x=family_for_analysis, y=(Abundance/num_ad)*100, fill = life_history_for_analysis)) +
+# Plot families with highest relative abundance, in adults and nestlings
+p_adults <- ggplot(plot_ra[plot_ra$Adult_or_Nestling == "Adult" ,], aes(x=family, y=(Abundance/num_ad), fill = life_history)) +
   geom_bar(stat = "identity") +
   theme_classic() +
   scale_x_discrete(limits = order_for_axis_list) +
-  scale_y_continuous(limits = c(0, 30)) +
-  ylab("Average relative abundance (%)") +
+  scale_y_continuous(limits = c(0, 0.30)) +
+  ylab("Average relative read abundance") +
   scale_fill_manual(values = c("aquatic" = "skyblue1", "terrestrial" = "palegreen3", "both" = "tan4")) +
   theme(legend.title = element_blank()) +
   ggtitle("Adults") +
   theme(plot.title = element_text(size = 14))
 # Note: this displays a warning message because we're only showing the most common families, and the rest are removed.
 
-p_nestlings <- ggplot(plot_ra[plot_ra$Adult_or_Nestling == "Nestling" ,], aes(x=family_for_analysis, y=(Abundance/num_nestl)*100, fill = life_history_for_analysis)) +
+p_nestlings <- ggplot(plot_ra[plot_ra$Adult_or_Nestling == "Nestling" ,], aes(x=family, y=(Abundance/num_nestl), fill = life_history)) +
   geom_bar(stat = "identity") +
   theme_classic() +
   theme(axis.text.x = element_text(angle = 55, hjust = 1, size = 12)) +
   scale_x_discrete(limits = order_for_axis_list) +
-  scale_y_continuous(limits = c(0, 30)) +
+  scale_y_continuous(limits = c(0, 0.30)) +
   xlab("Family") +
-  ylab("Average relative abundance (%)") +
+  ylab("Average relative abundance") +
   scale_fill_manual(values = c("aquatic" = "skyblue1", "terrestrial" = "palegreen3", "both" = "tan4")) +
   theme(legend.title = element_blank()) +
   ggtitle("Nestlings") +
@@ -531,29 +416,28 @@ fig_b <- ggarrange(p_adults + rremove("ylab") + rremove("xlab") +
                  common.legend = TRUE, legend = "right",
                  align = "h")
 
-fig_b <- annotate_figure(fig_b, left = textGrob("Average relative abundance of each family (%)", rot = 90, vjust = 1, gp = gpar(cex = 2)),
-                bottom = textGrob("Arthropod distinct taxonomic family", gp = gpar(cex = 2)))
+fig_b <- annotate_figure(fig_b, left = textGrob("Average relative read abundance of family", rot = 90, vjust = 1, gp = gpar(cex = 2)),
+                bottom = textGrob("Arthropod family", gp = gpar(cex = 2)))
 
 fig_b
 
 # Save combined figures
 ggsave(here("3_r_scripts/figs/figs_descriptive/common_families_rel_ab.pdf"), width = 5, height = 7, device = "pdf")
 
-## Combine figures for distinct taxonomic group families found in over 20% of samples and distinct taxonomic group families with highest relative abundance ----- 
+## Combine figures for families found in over 20% of samples and families with highest relative abundance ----- 
 
-fig_full <- ggarrange(fig_a, fig_b,
-                   ncol = 2, 
-                   common.legend = TRUE, legend = "right",
-                   align = "h")
+# Opened "common_families.pdf" and "common_families_rel_ab.pdf" in Adobe Illustrator.
 
-ggsave(here("3_r_scripts/figs/figs_descriptive/common_families_occ_rel_ab.pdf"), width = 10, height = 8, device = "pdf")
+# Combined figures into single PDF and made the following modifications:
 
-# Figure taken into Adobe Illustrator to make minor aesthetic modifications.
   # - Deleted duplicate legend
-  # - Reduced space between all panels
-  # - Evened out size of axis labels
-  # - Increased size of text in legend, moved legend
+  # - Increased size of text in legend, made legend central
+  # - Deleted duplicate x-axis label, centered label ("Arthropod family") and made it larger
+  # - Moved y-axis labels to be more centered
+  # - Ensured that axes in Figures A and B were at the same levels.
   # - Added "A" and "B" labels
+
+# Exporting as TIF file results in best visuals.
 
 # Calculate percent aquatic & number of families in each sample ----------------
 
@@ -569,9 +453,9 @@ aquatic <- data.frame(matrix(NA, ncol = 3, nrow = length(sample)))
 for (i in 1:length(sample)){
   sam <- sample[i] # identify sample
   list <- plot_ra[plot_ra$sampleID == sam ,] # pull out all records from plot_ra that have that sample ID
-  unique_fam <- unique(list$family_for_analysis[list$Abundance != "0"])
+  unique_fam <- unique(list$family[list$Abundance != "0"])
   num_fam <- length(unique_fam)
-  list_aq <- list[list$life_history_for_analysis == "aquatic" ,] # of those records, pull out only those that have aquatic life histories
+  list_aq <- list[list$life_history == "aquatic" ,] # of those records, pull out only those that have aquatic life histories
   rel_ab <- sum(list_aq$Abundance) # sum up all of the percentages of aquatic insects for that sample
   aquatic[i,1] <- sam # save the sample name
   aquatic[i,2] <- rel_ab # save the total aquatic relative abundance
@@ -597,11 +481,11 @@ occ_aq <- data.frame(matrix(NA, ncol = 2, nrow = length(sample)))
 for (i in 1:length(sample)){
   sam <- sample[i] # identify sample
   list <- plot_occ[plot_occ$sampleID == sam ,] # pull out all records from plot_occ that have that sample ID
-  list <- list[list$Abundance != 0 ,] # Only include distinct taxonomic group families in this calculation if they're actually present in the sample
-  list_aq <- list[list$life_history_for_analysis == "aquatic" ,] # of those records, pull out only those that have aquatic life histories
+  list <- list[list$Abundance != 0 ,] # Only include families in this calculation if they're actually present in the sample
+  list_aq <- list[list$life_history == "aquatic" ,] # of those records, pull out only those that have aquatic life histories
   aq_count <- sum(list_aq$Abundance) # sum up all of the "presence" tallies for aquatic insects for that sample
-  all_count <- sum(list$Abundance) # sum up total number of distinct taxonomic group families found in sample
-  per_aq <- (aq_count / all_count) # calculate the percent of each sample that is aquatic distinct taxnomic group families
+  all_count <- sum(list$Abundance) # sum up total number of families found in sample
+  per_aq <- (aq_count / all_count) # calculate the percent of each sample that is aquatic families
   occ_aq[i,1] <- sam # save the sample name
   occ_aq[i,2] <- per_aq # save the total aquatic relative abundance
 }
@@ -612,37 +496,6 @@ names(occ_aq)[names(occ_aq) == "X2"] <- "percent_aquatic_occ"
 
 # Add in sample information
 aquatic <- merge(occ_aq, aquatic, by = "sampleID")
-
-## Percent aquatic using occurrence -- to family only --------------------------
-
-# Add in life history information to plot_occ_fam
-life_history_family_merge <- subset(life_history_family, select = c(family, life_history)) # get rid of unnecessary columns
-plot_occ_fam <- merge(plot_occ_fam, life_history_family_merge, by = "family", all.x = TRUE, all.y = FALSE)
-
-# Identify the unique samples
-sample <- unique(plot_occ_fam$sampleID)
-
-# Create an empty data frame to store occurrence information
-occ_fam_aq <- data.frame(matrix(NA, ncol = 2, nrow = length(sample)))
-
-for (i in 1:length(sample)){
-  sam <- sample[i] # identify sample
-  list <- plot_occ_fam[plot_occ_fam$sampleID == sam ,] # pull out all records from plot_occ_fam that have that sample ID
-  list <- list[list$Abundance != 0 ,] # Only include families in this calculation if they're actually present in the sample
-  list_aq <- list[list$life_history == "aquatic" ,] # of those records, pull out only those that have aquatic life histories
-  aq_count <- sum(list_aq$Abundance) # sum up all of the "presence" tallies for aquatic insects for that sample
-  all_count <- sum(list$Abundance) # sum up total number of families found in sample
-  per_aq <- (aq_count / all_count) # calculate the percent of each sample that is aquatic families
-  occ_fam_aq[i,1] <- sam # save the sample name
-  occ_fam_aq[i,2] <- per_aq # save the total aquatic relative abundance
-}
-
-# Name columns
-names(occ_fam_aq)[names(occ_fam_aq) == "X1"] <- "sampleID"
-names(occ_fam_aq)[names(occ_fam_aq) == "X2"] <- "percent_aquatic_occ_fam"
-
-# Add in sample information
-aquatic <- merge(occ_fam_aq, aquatic, by = "sampleID")
 
 # Add in the number of reads per sample (sequencing depth) ---------------------
 
@@ -743,12 +596,11 @@ aquatic_nestlingsadults <- merge(aquatic_nestlings, captures, all.x = FALSE)
 # When it's available, we would like the adult samples info (i.e. percent aquatic)
 # so that we can compare adult aquatic with nestling survival
 aquatic_F_prov <- aquatic[aquatic$Sex == "F" & aquatic$Capture_Number == "3" ,]
-aquatic_F_prov <- subset(aquatic_F_prov, select = c(Individual_Band, percent_aquatic_ra, percent_aquatic_occ, percent_aquatic_occ_fam, num_fam))
+aquatic_F_prov <- subset(aquatic_F_prov, select = c(Individual_Band, percent_aquatic_ra, percent_aquatic_occ, num_fam))
 aquatic_F_prov <- dplyr::rename(aquatic_F_prov,
                                 ad_Individual_Band = Individual_Band,
                                 ad_percent_aquatic_ra = percent_aquatic_ra,
                                 ad_percent_aquatic_occ = percent_aquatic_occ,
-                                ad_percent_aquatic_occ_fam = percent_aquatic_occ_fam,
                                 ad_num_fam = num_fam
 )
 
@@ -760,7 +612,7 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, aquatic_F_prov, by = "
 write.csv(aquatic, here("2_modified_data/aquatic.csv"))
 write.csv(aquatic_nestlingsadults, here("2_modified_data/aquatic_nestlingsadults.csv"))
 
-# Percent aquatic with relative abundance vs. occurrence -----------------------
+# Percent aquatic with relative abundance vs. occurrence -- FIGURE S3 ----------
 # Check on the relationship between percent aquatic when it is calculated
 # with relative abundance vs. occurrence
 
@@ -770,7 +622,7 @@ p <- ggplot(aquatic, aes(x=percent_aquatic_ra, y = percent_aquatic_occ)) + geom_
   scale_y_continuous(limits = c(0,1)) +
   theme(axis.title=element_text(size = 18)) +
   geom_abline(slope = 1, intercept = 0, linetype = 2) # add a line showing a 1 to 1 relationship
-ggsave(here("3_r_scripts/figs/figs_descriptive/percent_aquatic_compare.png"), width = 5, height = 5, device = "png")
+ggsave(here("3_r_scripts/figs/figs_descriptive/Figure_S3_percent_aquatic_compare.png"), width = 5, height = 5, device = "png")
 
 cor <- cor.test(aquatic$percent_aquatic_ra, aquatic$percent_aquatic_occ)
 cor
