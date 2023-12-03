@@ -1,7 +1,7 @@
 
 # Purpose
 
-This R project contains all data and R scripts used to produce the analyses, figures, and tables in "Predictors and consequences of diet variation in a declining generalist aerial insectivore." The project takes sequences from tree swallow fecal samples, identifies their contents, and explores predictors and consequences of diet variation. What follows are descriptions of each folder and how to use them to reproduce the analyses for this project.
+This R project contains all data and R scripts used to produce the analyses, figures, and tables in "Predictors and consequences of diet composition in a declining generalist aerial insectivore." The project takes sequences from tree swallow fecal samples, identifies their contents, and explores predictors and consequences of diet composition. What follows are descriptions of each folder and how to use them to reproduce the analyses for this project.
 
 Authors: Jennifer J. Uehling, Conor C. Taff, Jennifer L. Houtz, Paige M. Becker, Allison S. Injaian, and Maren N. Vitousek
 
@@ -11,7 +11,7 @@ Authors: Jennifer J. Uehling, Conor C. Taff, Jennifer L. Houtz, Paige M. Becker,
 
 Contains raw data for this project.
 
-- **Files with the prefix "trescoi_2022_09"**: results from running the sequencing result fastq files through the AMPtk pipeline, including the otu table, taxonomy file, and mapping file. See *data_filtering_script.R* for more information about the AMPtk pipeline.
+- **Files with the prefix "trescoi_2022_09r2"**: results from running the sequencing result fastq files through the AMPtk pipeline, including the otu table, taxonomy file, and mapping file. See *data_filtering_script.R* for more information about the AMPtk pipeline.
 - **extra_samples.csv**: contains records of samples sequenced that do not have metadata in the Vitousek Lab database files. This includes blanks and day 6 nestlings that do not yet have individual identification (they were not marked with uniquely-number bands until day 12).
 
 The raw sequencing files (fastq files) for this project, which were run through the AMPtk pipeline, are uploaded to NCBI’s Sequence Read Archive (Bioproject: PRJNA884756).
@@ -35,7 +35,7 @@ Contains all scripts used for data filtering and analysis. The scripts should be
 
 ## 4_other_outputs
 
-Contains spreadsheets with the unique arthropod families and, in some cases, genera identified in the fecal samples plus information about their larval stages (i.e., aquatic, terrestrial, both, unknown).
+Contains spreadsheets with the unique arthropod families identified in the fecal samples plus information about their immature stages (i.e., aquatic, terrestrial, both, unknown).
 
 - *unique_families.csv*: created in *data_filtering_script.R*. Contains a list of the unique families found in the fecal samples.
 - *unique_families_aquatic_terrestrial_IDs.csv*: populated outside of R. Contains identifications of the habitat of the larval stage of each insect family (aquatic, terrestrial, both, or unknown). Columns are as follows:
@@ -45,18 +45,6 @@ Contains spreadsheets with the unique arthropod families and, in some cases, gen
 	- *common_name*: common name of arthropod family
 	- *sources*: sources of information about the arthropod family
 	- *Notes*: notes about arthropod family's larval stage.
-- *coi_2019_genus_IDs_for_code.csv*: populated outside of R. Contains list of genera for families with "both" for larval habitat. Only genera for which larval stage habitat could be identified are included. Columns are as follows:
-	- *family_lh*: family and larval habitat of the specific genus, separated by an underscore
-	- *family_genus*: family and genus, separated by an underscore
-	- *life_history_genus*: habitat of larval stage for this genus
-	- *Notes*: notes about the genus
-	- *Sources*: sources of information about the genus
-- *coi_2019_genus_IDs.xlsx*: populated outside of R. Contains list of genera for families with "both" for larval habitat. Contains all genera in each "both" family, including those for which no information about larval habitat could be found. Columns are as follows:
-	- *family*: family
-	- *genus*: genus
-	- *life_history_genus*: habitat of larval stage for this genus
-	- *Notes*: notes about the genus, including notes when very little information could be found about genus
-	- *Sources*: sources of information about the genus
 
 # Column names of raw data files (stored in *1_raw_data*) and metadata file (*s_info.csv*)
 
@@ -75,7 +63,7 @@ Below are the column names for each of the raw data files include in the analysi
 - *cap_doy*: the Julian day of the year when the bird was captured
 - *Age*: age of bird in days
 
-## trescoi_2022_09.mapping_file.txt
+## trescoi_2022_09r2.mapping_file.txt
 
 - *SampleID*: sample well location in plate from when samples were submitted to the Cornell BRC and fecal sample ID number, with an "x" in between
 - *BarcodeSequence*: barcode assigned to each sample by Cornell BRC
@@ -86,11 +74,11 @@ Below are the column names for each of the raw data files include in the analysi
 - *DemuxReads*: number of reads in sample after demultiplexing and before denoising
 - *Treatment*: not applicable, residual column from AMPtk pipeline
 
-## trescoi_2022_09.cluster.otu_table.txt
+## trescoi_2022_09r2.cluster.otu_table.txt
 
 - Each column is a sampleID and each row is an ASV. The numbers in each cell indicate the number of reads of each ASV (row) in each sample (column).
 
-## trescoi_2022_09.cluster.taxonomy.txt
+## trescoi_2022_09r2.cluster.taxonomy.txt
 
 - *OTUID*: ASV ID number (assigned by AMPtk)
 - *taxonomy*: The taxonomic identification of the ASV. AMPtk outputs this as a long string of text and includes some additional information in the output; see AMPtk documentation for more information.
