@@ -2,7 +2,7 @@
 # consequences of diet composition in a declining generalist aerial insectivore"
 
 # Written by: Jenny Uehling and Conor Taff
-# Last updated: 12/3/2023
+# Last updated: 9/10/2024
 # Run under R Studio with R version 4.3.1 on a Mac OS
 
 # This code takes the phyloseq object coi_ps2, created in data_filtering_script.R,
@@ -424,7 +424,7 @@ fig_b
 # Save combined figures
 ggsave(here("3_r_scripts/figs/figs_descriptive/common_families_rel_ab.pdf"), width = 5, height = 7, device = "pdf")
 
-## Combine figures for families found in over 20% of samples and families with highest relative abundance ----- 
+## Combine figures for families found in over 20% of samples and families with highest relative abundance -- FIGURE 1 ----- 
 
 # Opened "common_families.pdf" and "common_families_rel_ab.pdf" in Adobe Illustrator.
 
@@ -615,6 +615,9 @@ write.csv(aquatic_nestlingsadults, here("2_modified_data/aquatic_nestlingsadults
 # Percent aquatic with relative abundance vs. occurrence -- FIGURE S3 ----------
 # Check on the relationship between percent aquatic when it is calculated
 # with relative abundance vs. occurrence
+
+mod_relation_ra_occ <- lm(percent_aquatic_occ ~ percent_aquatic_ra, data = aquatic)
+summary(mod_relation_ra_occ)
 
 p <- ggplot(aquatic, aes(x=percent_aquatic_ra, y = percent_aquatic_occ)) + geom_point() +
   geom_smooth(method=lm) + theme_classic() + xlab("Percent aquatic via relative abundance") +

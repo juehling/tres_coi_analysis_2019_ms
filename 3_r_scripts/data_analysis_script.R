@@ -2,7 +2,7 @@
 # declining generalist aerial insectivore"
 
 # Written by: Jenny Uehling and Conor Taff
-# Last updated: 12/3/2023
+# Last updated: 10/15/2024
 # Run under R Studio 4.3.1 on a Mac OS
 
 # This is the main analysis script for analyzing data after processing them
@@ -29,7 +29,7 @@
   pacman::p_load("tidyverse", "plyr", "dplyr", "here", "ggpubr", "data.table",
                  "gtools", "lme4", "lmerTest", "emmeans", "MuMIn", "DHARMa", "glmmTMB",
                  "sjPlot", "RColorBrewer", "MASS", "coda","mvtnorm","devtools","loo", 
-                 "shape", "rethinking")
+                 "shape", "rethinking", "grid")
   
   # tidyverse, plyr, and dplyr for data wrangling
   # here for file reference by relative paths
@@ -45,6 +45,8 @@
   # sjPlot for created html tables
   # RColorBrewer for examining color plotting options
   # MASS, coda, mvtnorm, devtools, loo, shape, rethinking for plotting confidence intervals
+  # grid for plotting
+  # ggpp for using jitter and nudge at the same time when plotting in ggplot2
 
   # Set ggplot theme
   theme_set(theme_classic())
@@ -569,7 +571,7 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
   # Examine pairwise differences between variables
   emmeans(mod_ra, list(pairwise ~ n_Age), adjust = "tukey", ddf = "Kenward-Roger")
   
-  ## Plot percent aquatic, relative abundance ~ nestling age -- FIGURE 3 -------------------
+  ## Plot percent aquatic, relative abundance ~ nestling age -- FIGURE 3A -------------------
   mod_ra <- lmer(n_percent_aquatic_ra_logit ~ Site + scale(ad_Mass) + scale(ad_Flat_Wing) + scale(n_brood_size_sampling_time) +
                  n_Age + (1|n_exp_treat) + (1|site_box_year),
                  data = aquatic_nestlingsadults)
@@ -577,19 +579,17 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
   m_eml <- pivot_longer(m_em, cols = c("lower.CL", "upper.CL"), values_to = "y")
   
   p_age <- ggplot(aquatic_nestlingsadults, (aes(x=as.factor(n_Age), y=n_percent_aquatic_ra))) +
-    geom_boxplot(width = 0.25, position = position_nudge(x = -0.3), fill = "#70a8e3", outlier.shape = NA) + 
-    geom_jitter(width = 0.12, alpha = 0.5, shape = 16, color = "#70a8e3", size = 2) +
+    geom_boxplot(width = 0.15, position = position_nudge(x = -0.2), fill = "#31a3ff", outlier.shape = NA) + 
+    geom_jitter(width = 0.1, alpha = 0.5, shape = 16, color = "#31a3ff", size = 2) +
     xlab("Nestling age (days)") +
-    ylab(paste0("Proportion of nestling diet", "\n", "composed of aquatic insects")) +
-    theme(axis.title.x = element_text(size = 16)) + theme(axis.text.x = element_text(size = 14)) +
-    theme(axis.title.y = element_text(size = 16)) + theme(axis.text.x = element_text(size = 14)) +
-    theme(axis.text.y = element_text(size = 14)) +
-    theme(strip.text = element_text(size = 14))
-  p_age2 <- p_age + geom_line(data = m_eml, mapping = aes(x = n_Age, y = inv.logit(y, min = -0.0001, max = 1.0001)), position = position_nudge(x = 0.3), col = "#70a8e3", size = 1) +
-    geom_point(data = m_em, mapping = aes(x = n_Age, y = inv.logit(emmean, min = -0.0001, max = 1.0001)), size = 4, shape = 23, position = position_nudge(x = 0.3), fill = "#70a8e3")
-  p_age2
-  ggsave(here("3_r_scripts/figs/figs_relativeabundance/Figure_3_nestling_age_ra.pdf"), p_age2, width = 5, height = 5, device = "pdf")
-
+    ylab("Calculated via relative abundance") +
+    theme(axis.title.x = element_text(size = 18)) + theme(axis.text.x = element_text(size = 18)) +
+    theme(axis.title.y = element_text(size = 18)) + theme(axis.text.y = element_text(size = 16))
+  fig_3a <- p_age + geom_line(data = m_eml, mapping = aes(x = n_Age, y = inv.logit(y, min = -0.0001, max = 1.0001)), position = position_nudge(x = 0.2), col = "#31a3ff", size = 1) +
+    geom_point(data = m_em, mapping = aes(x = n_Age, y = inv.logit(emmean, min = -0.0001, max = 1.0001)), size = 4, shape = 23, position = position_nudge(x = 0.2), fill = "#31a3ff")
+  fig_3a
+  ggsave(here("3_r_scripts/figs/figs_relativeabundance/Figure_3a_nestling_age_ra.pdf"), fig_3a, width = 5, height = 3.5, device = "pdf")
+  
   ## Model for nestling percent aquatic, occurrence ~ adult phenotype ----------
   
   mod_occ <- lmer(n_percent_aquatic_occ_logit ~ Site + scale(ad_Mass) + scale(ad_Flat_Wing) + scale(n_brood_size_sampling_time) +
@@ -610,22 +610,45 @@ aquatic_nestlingsadults <- merge(aquatic_nestlingsadults, alpha_div,
     geom_boxplot((aes(x=Site, y=n_percent_aquatic_occ)))
   p_occ_site
   
-  # Plot percent aquatic, occurrence ~ nestling age
+  ## Plot percent aquatic, occurrence ~ nestling age -- FIGURE 3B -------------------
+  mod_occ <- lmer(n_percent_aquatic_occ_logit ~ Site + scale(ad_Mass) + scale(ad_Flat_Wing) + scale(n_brood_size_sampling_time) +
+                    n_Age + (1|n_exp_treat) + (1|site_box_year),
+                  data = aquatic_nestlingsadults)
   m_em <- as.data.frame(emmeans(mod_occ, "n_Age", lmer.df = "Kenward-Roger"))
   m_eml <- pivot_longer(m_em, cols = c("lower.CL", "upper.CL"), values_to = "y")
   
   p_age <- ggplot(aquatic_nestlingsadults, (aes(x=as.factor(n_Age), y=n_percent_aquatic_occ))) +
-    geom_boxplot(width = 0.25, position = position_nudge(x = -0.4), fill = "#70a8e3") + 
-    geom_jitter(width = 0.15, alpha = 0.5, shape = 16, color = "#70a8e3", size = 2) +
-    xlab("Nestling Age") +
-    ylab("Proportion of nestling diet composed of aquatic insects") +
-    theme(axis.title = element_text(size = 16)) + theme(axis.text.x = element_text(angle = 90, size = 14)) +
-    theme(legend.title = element_text(size = 16), legend.text = element_text(size = 14)) +
-    theme(axis.text.y = element_text(size = 14)) +
-    theme(strip.text = element_text(size = 14))
-  p_age2 <- p_age + geom_line(data = m_eml, mapping = aes(x = n_Age, y = inv.logit(y, min = -0.0001, max = 1.0001)), col = "#70a8e3", size = 1) +
-    geom_point(data = m_em, mapping = aes(x = n_Age, y = inv.logit(emmean, min = -0.0001, max = 1.0001)), color = "#70a8e3", size = 4, shape = 23, fill = "#70a8e3")
-  p_age2
+    geom_boxplot(width = 0.15, position = position_nudge(x = -0.2), fill = "#1963b9") + 
+    geom_jitter(width = 0.1, alpha = 0.5, shape = 16, color = "#1963b9", size = 2) +
+    xlab("Nestling age (days)") +
+    ylab("Calculated via occurrence") +
+    theme(axis.title.x = element_text(size = 18)) + theme(axis.text.x = element_text(size = 18)) +
+    theme(axis.title.y = element_text(size = 18)) + theme(axis.text.y = element_text(size = 16))
+  fig_3b <- p_age + geom_line(data = m_eml, mapping = aes(x = n_Age, y = inv.logit(y, min = -0.0001, max = 1.0001)), position = position_nudge(x = 0.2), col = "#1963b9", size = 1) +
+    geom_point(data = m_em, mapping = aes(x = n_Age, y = inv.logit(emmean, min = -0.0001, max = 1.0001)), size = 4, shape = 23, position = position_nudge(x = 0.2), fill = "#1963b9")
+  fig_3b
+  ggsave(here("3_r_scripts/figs/figs_occurrence/Figure_3b_nestling_age_occ.pdf"), fig_3b, width = 5, height = 3.5, device = "pdf")
+  
+  ## Combine figures 3a and 3b -- FIGURE 3 -------------------------------------
+  
+  # Combine figures
+  
+  fig_3 <- ggarrange(fig_3a + rremove("xlab") +
+                       theme(axis.text.x = element_blank(),
+                             axis.ticks.x = element_blank(),
+                             axis.title.x = element_blank(),
+                             plot.margin = margin(b = 0, l = 25, r = 5)),
+                     fig_3b + 
+                       theme(plot.margin = margin(t = 0.001, l = 25, r = 5)),
+                     ncol = 1, 
+                     align = "h")
+  
+  fig_3 <- annotate_figure(fig_3, left = textGrob("Proportion of nestling diet composed of aquatic insects", rot = 90, vjust = 1, gp = gpar(cex = 1.75)))
+  
+  fig_3
+  
+  # Save combined figures
+  ggsave(here("3_r_scripts/figs/figs_relative_abundance_occurrence/Figure_3.pdf"), width = 7, height = 9, device = "pdf")
   
   ## Examination of day 12 and day 15 patterns with individual ID --------------
   
