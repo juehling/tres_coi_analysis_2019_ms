@@ -3,11 +3,11 @@
 
 # Written by: Conor Taff and Jenny Uehling
 
-# Last updated: 8/16/2024
+# Last updated: 10/28/2025
 
 # Run under R Studio with R version 4.3.1 on a Mac OS
 
-# This code takes raw sequence data and metadata and converts it into formats
+# This code takes raw sequence data and metadata and converts them into formats
 # useable in future analyses. It also performs basic calculations about the
 # nature of the sequencing data and filters just to the data needed for this
 # project.
@@ -18,61 +18,69 @@
 # sequences. This section contains notes on how we did this in AMPtk, and the
 # steps that brought us up to importing the files into R.
 
-# All of the raw sequences for this project were processed using the `AMPtk`
+# AMPtk citation: Palmer JM, Jusino MA, Banik MT, Lindner DL (2018) Non-biological 
+# synthetic spike-in controls and the AMPtk software pipeline improve mycobiome data. 
+# PeerJ 6:e4925. https://doi.org/10.7717/peerj.4925
+
+# All of the raw sequences for this project were processed using the 'AMPtk'
 # pipeline in the command line [@amptk]. We followed very closely the workflow
-# described on the project website `amptk.readthedocs.io/en/latest`. Before
-# running `AMPtk`, you need to install the software in a conda environment,
-# install `USEARCH`, and download the COI database. Those steps are described in 
-# detail on the website and not repeated here.
+# described on the project website 'amptk.readthedocs.io/en/latest/index.html'. Before
+# running 'AMPtk', you need to install the software in a conda environment,
+# install 'USEARCH', and download the COI arthropod/chordate database. Those
+# steps are described indetail on the website and not repeated here.
 
 # A few notes about installation and setting up for the pipeline:
   
 #  1. It seems that currently there is no way to run AMPtk on Mac with OS Catalina 
-#     because it can't execute the 32bit `USEARCH` program. Use an older computer, 
+#     because it can't execute the 32bit 'USEARCH' program. Use an older computer, 
 #     virtual machine, or cloud computing.
 
 #  2. The pipeline expects your sequences to be named: 
-#     `sampleID_whatever_filler_R1/F1.fastq.gz`. The sequences from the Cornell
+#     'sampleID_whatever_filler_R1/F1.fastq.gz'. The sequences from the Cornell
 #     Biotechnology Resources Center (BRC) come back with the sample name in the 
-#     middle. We haven't yet figured out how to make `AMPtk` recognize that, so 
+#     middle. We haven't yet figured out how to make 'AMPtk' recognize that, so 
 #     we've been batch-renaming the files to get the sample name first.
 
-# Once `AMPtk` is installed, the entire pipeline involves just three commands
-# (will take several hours on a home laptop to run with samples in hundreds).
+# Once 'AMPtk' is installed, the entire pipeline involves just three commands
+# (it will take several hours on a home laptop to run with samples in hundreds).
 # Output files will be saved in the folder where you have set up your conda 
-# environment. These commands are given below, along with descriptions of what
-# they are doing.
+# environment. These commands are given below, along with brief notes specific
+# to this project. Visit the AMPtk website for very detailed information about
+# the workflow that happens under each command.
 
-# 1. Pre-processing sequence data: Takes a set prefix to add to all files and 
-#    the forward and reverse primer sequences. Specify input folder where 
-#    sequences are stored.
+# 1. Pre-processing sequence data: Takes a set prefix to add to all files
+#    (in our case, trescoi_2025_10) and the forward and reverse primer sequences
+#    (in our case, f GCHCCHGAYATRGCHTTYCC and r TCDGGRTGNCCRAARAAYCA).
+#    Specifies the input folder where sequences are stored. We also specified
+#    that only sequences that fell within 20 bp of our target amplicon length of
+#    421 bp should be retained using the 'trim_len' and 'min_len' inputs. 
 
-# > `amptk illumina -i /directory/with/sequences -o trescoi` 
-# > `-f GCHCCHGAYATRGCHTTYCC -r TCDGGRTGNCCRAARAAYCA`
+# > amptk illumina -i /folder_where_sequences_are_stored -o trescoi_2025_10 -f 
+# GCHCCHGAYATRGCHTTYCC -r TCDGGRTGNCCRAARAAYCA --trim_len 441 --min_len 401
 
 # 2. Denoising with `DADA2` [@dada2]: This takes in the processed sequences from
 #    step 1 and applies the denoising algorithm that identifies ASVs and models 
-#    sequencing error to arrive at a final list of ASVs for F/R reads. Forward 
-#    and reverse reads are then merged together.
+#    sequencing error to arrive at a list of ASVs. Then, those ASVs are clustered
+#    with a threshold of 97% similarity to arrive at a final list of OTUs.
 
-# > `amptk dada2 -i tres.coi.demux.fg.gz --platform illumina -o trescoi`
+# > amptk dada2 -i trescoi_2025_10.demux.fq.gz --platform illumina -o tres_2025_10
 
 # 3. Assigning taxonomy: This uses the default suggestions from `AMPtk` 
 #    documentation, but there are many other options. It applies the 'hybrid 
 #    taxonomy algorithm', which looks at matches to i) Global Alignment to the 
-#    downloaded COI arthropod database, ii) SINTAX classification, and iii) UTAX
+#    downloaded COI arthropod/chordate database, ii) UTAX classification, and iii) SINTAX
 #    classification. More information is on the website, but basically it retains
-#    the best hit that also has the most levels of taxonomic ranks. The arthropod 
-#    COI database needs to be downloaded and set up for this to run.
+#    the best hit that also has the most levels of taxonomic ranks. The COI
+#    arthropod/chordate database needs to be downloaded and set up for this to run.
 
-# > `amptk taxonomy -i trescoi.cluster.otu_table.txt -f trescoi.cluster.otus.fa -d COI`
+# > amptk taxonomy -i tres_2025_10.cluster.otu_table.txt -f tres_2025_10.cluster.otus.fa -d COI
 
 # Those three commands produce a bunch of output files, but only three are needed
 # to pull into `R` for subsequent analyses.
 
-# - trescoi_2022_09r2.cluster.otu_table.txt has samples in columns and OTUs in rows with reads in each cell
-# - trescoi_2022_09r2.cluster.taxonomy.txt has full taxonomic information for each OTU
-# - trescoi_2022_09r2.mapping_file.txt has one row for each sample to add metadata
+# - tres_2025_10.cluster.otu_table.txt has samples in columns and OTUs in rows with reads in each cell
+# - tres_2025_10.cluster.taxonomy.txt has full taxonomic information for each OTU
+# - trescoi_2025_10.mapping_file.txt has one row for each sample to add metadata
 
 # All three of these files are read into the `R` script in this repository as the 
 # basis of everything here with the addition of sample metadata.
@@ -110,7 +118,7 @@ pacman::p_load("tidyverse", "plyr", "dplyr", "phyloseq", "vegan", "here",
 # This file is housed outside of the Github because it contains all records
 # from the Vitousek lab long-term dataset; in the following code, we extract
 # just the data we need and save it in this Github repository.
-s_info <- read.csv("~/Dropbox/tres_database_data/Captures_Hormone_Bleeding_Blood_DNA_12.09.21.csv")
+s_info <- read.csv("~/Dropbox/tres_database_data_cornell/Captures_Hormone_Bleeding_Blood_DNA_12.09.21.csv")
 
 # Delete all rows not from 2019.
 s_info <- s_info[!is.na(s_info$Exp_Year), ] # First must delete single row with NA for year.
@@ -165,7 +173,7 @@ s_info <- bind_rows(s_info, extra_info)
 # This file is housed outside of the Github because it contains all records
 # from the Vitousek lab long-term dataset; in the following code, we extract
 # just the data we need and save it in this Github repository.
-nest_info <- read.csv("~/Dropbox/tres_database_data/Nest_Records_12.09.21.csv")
+nest_info <- read.csv("~/Dropbox/tres_database_data_cornell/Nest_Records_12.09.21.csv")
 
 # Delete all rows not from 2019.
 nest_info <- nest_info[nest_info$Exp_Year == "2019" ,]
@@ -207,12 +215,15 @@ write.csv(s_info, "2_modified_data/s_info.csv")
 
 # Load and wrangle sequencing data ---------------------------------------------
 
-# The prefix used for AMPtk processing is tres_coi.
+# The prefix used for AMPtk processing is tres.
 # This is set in AMPtk and all files produced there have this prefix.
-amptk_prefix <- "trescoi"
+
+amptk_prefix_preprocess <- "trescoi" # This prefix was used on one precursor file;
+                                     # the rest were just "tres"
+amptk_prefix <- "tres"
 
 # Load the number of reads by taxa per sample table. Format for phyloseq.
-otu_ab <- read.delim(here("1_raw_data", paste0(amptk_prefix, "_2022_09r2.cluster.otu_table.txt")))
+otu_ab <- read.delim(here("1_raw_data", paste0(amptk_prefix, "_2025_10.cluster.otu_table.txt")))
 
 # P19N379 is mislabeled; it should be labelled as P19N479.
 otu_ab <- dplyr::rename(otu_ab, F05xP19N479 = F05xP19N379)
@@ -224,7 +235,7 @@ otu_ab <- otu_ab[, 2:ncol(otu_ab)]    # remove the column of otu names
 # This 'mapping' table from AMPtk is mostly blank but has all the sample
 # names so it can be joined to actual sample metadata. It's also possible
 # to merge in the sample metadata within the AMPtk pipeline.
-map <- read.delim(here("1_raw_data", paste0(amptk_prefix, "_2022_09r2.mapping_file.txt")))
+map <- read.delim(here("1_raw_data", paste0(amptk_prefix_preprocess, "_2025_10.mapping_file.txt")))
   
 # P19N379 is mislabeled; it should be labelled as P19N479.
 map$X.SampleID <- gsub("F05xP19N379", "F05xP19N479", map$X.SampleID)
@@ -238,7 +249,7 @@ for(i in 1:nrow(map)){
 # write.table(map, "map.txt", sep = "\t") # to save a copy of the mapping file
   
 # Read the otu taxonomy table
-otu_tax <- read.delim(here("1_raw_data", paste0(amptk_prefix, "_2022_09r2.cluster.taxonomy.txt")))
+otu_tax <- read.delim(here("1_raw_data", paste0(amptk_prefix, "_2025_10.cluster.taxonomy.txt")))
 rownames(otu_tax) <- otu_tax$X.OTUID
 
 # The taxonomy result from AMPtk is in one long string of text. This is splitting up the string
@@ -409,12 +420,12 @@ depth_no_arth_filter <- data.frame(as(sample_data(coi_ps2), "data.frame"),
   mean(depth_neg_controls$TotalReads)
   median(depth_neg_controls$TotalReads)
   
-  # Examine ASVs in blanks
+  # Examine OTUs in blanks
   coi_ps2_blanks <- subset_samples(coi_ps2, Adult_or_Nestling == "neg_control")
   (coi_ps2_blanks = prune_taxa(taxa_sums(coi_ps2_blanks) > 0, coi_ps2_blanks)) # take out taxa from tax_table that aren't found in blanks
   tax_tab_examine_blanks <- data.frame(tax_table(coi_ps2_blanks))
   
-  # Determine number of ASVs
+  # Determine number of OTUs
   length(tax_tab_examine_blanks$kingdom)
 
   ## Fecal samples -------------------------------------------------------------
@@ -435,12 +446,12 @@ depth_no_arth_filter <- data.frame(as(sample_data(coi_ps2), "data.frame"),
   depth_no_arth_filter <- subset(depth_no_arth_filter_negcontrolremoved, select = c(sampleID, Individual_Band, Age, Site, Nest, TotalReads)) # for readability
   write.csv(depth_no_arth_filter, "2_modified_data/depth_no_arth_filter.csv")
 
-  # Examine ASVs in samples (exclude blanks)
+  # Examine OTUs in samples (exclude blanks)
   coi_ps2_noblanks <- subset_samples(coi_ps2, Exp_Year != "neg_control")
   (coi_ps2_noblanks = prune_taxa(taxa_sums(coi_ps2_noblanks) > 0, coi_ps2_noblanks)) # take out taxa from tax_table that aren't found in samples (i.e., that are only found in blanks)
   tax_tab_examine <- data.frame(tax_table(coi_ps2_noblanks))
 
-  # Determine number of ASVs
+  # Determine number of OTUs
   length(tax_tab_examine$kingdom)
 
 # Filter to arthropods ---------------------------------------------------------
@@ -468,14 +479,15 @@ depth$Adult_or_Nestling[depth$Adult_or_Nestling == "neg_control"] <- "Negative c
 p <- ggplot(depth, aes(log(TotalReads))) + geom_histogram(fill = "slateblue") + 
   ylab("Number of samples") + xlab("log(Reads)") +
   theme_classic() + geom_vline(xintercept = log(100), linetype = "dashed", col = "coral3", size = 1) + 
-  geom_text(x = log(100) - 0.5, y = 30, label = "100 Reads", angle = 90)
+  geom_text(x = log(100) - 0.5, y = 27, label = "100 Reads", angle = 90)
 
 p2 <- p + facet_grid(~ Adult_or_Nestling) +    # same but splitting out adult/nestling/negative_control
-      theme(strip.text.x = element_text(size = 12))
+      theme(strip.text.x = element_text(size = 12), panel.spacing = unit(1, "cm"),
+            plot.margin = unit(c(0.3, 0.3, 0.3, 0.3), "cm"))
 
 # Save the histograms
 ggsave(here("3_r_scripts/figs/figs_descriptive/total_reads.png"), plot = p, width = 8, height = 4.5, device = "png")
-ggsave(here("3_r_scripts/figs/figs_descriptive/Figure_S2_total_reads_split.png"), plot = p2, width = 8.2, height = 4, device = "png")
+ggsave(here("3_r_scripts/figs/figs_descriptive/Figure_S2_total_reads_split.png"), plot = p2, width = 8.3, height = 4, device = "png")
 
 # Extract information about blanks ---------------------------------------------
 
@@ -491,10 +503,25 @@ range(negative_controls$TotalReads)
 mean(negative_controls$TotalReads)
 median(negative_controls$TotalReads)
 
+# Examine the number of OTUs in blank samples filtered just to arthropods
+coi_ps2_blanks <- subset_samples(coi_ps2, Exp_Year == "neg_control")
+(coi_ps2_blanks = prune_taxa(taxa_sums(coi_ps2_blanks) > 0, coi_ps2_blanks)) # take out taxa from tax_table that aren't found in samples (i.e., that are only found in non-blank samples)
+tax_tab_examine_arth_blanks <- data.frame(tax_table(coi_ps2_blanks))
+
+# Determine number of OTUs in blanks, filtered to arthropod
+length(tax_tab_examine_arth_blanks$kingdom)
+
 # Remove blanks (negative controls) --------------------------------------------
 
 # Remove negative controls
 coi_ps2 <- subset_samples(coi_ps2, Age != "neg_control")
+
+# Examine the number of OTUs in samples filtered just to arthropods
+(coi_ps2_check_OTUS = prune_taxa(taxa_sums(coi_ps2) > 0, coi_ps2)) # take out taxa from tax_table that aren't found in samples (i.e., that are only found in blank samples)
+tax_tab_examine_arth_OTUs <- data.frame(tax_table(coi_ps2_check_OTUS))
+
+# Determine number of OTUs in fecal samples, filtered to arthropod
+length(tax_tab_examine_arth_OTUs$kingdom)
 
 # Save phyloseq object ---------------------------------------------------------
 

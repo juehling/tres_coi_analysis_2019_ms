@@ -11,7 +11,7 @@ Authors: Jennifer J. Uehling, Conor C. Taff, Jennifer L. Houtz, Paige M. Becker,
 
 Contains raw data for this project.
 
-- **Files with the prefix "trescoi_2022_09r2"**: results from running the sequencing result fastq files through the AMPtk pipeline, including the otu table, taxonomy file, and mapping file. See *data_filtering_script.R* for more information about the AMPtk pipeline.
+- **Files with the prefix "trescoi_2025_10"**: results from running the sequencing result fastq files through the AMPtk pipeline, including the otu table, taxonomy file, and mapping file. See *data_filtering_script.R* for more information about the AMPtk pipeline.
 - **extra_samples.csv**: contains records of samples sequenced that do not have metadata in the Vitousek Lab database files. This includes blanks and day 6 nestlings that do not yet have individual identification (they were not marked with uniquely-number bands until day 12).
 
 The raw sequencing files (fastq files) for this project, which were run through the AMPtk pipeline, are uploaded to NCBI’s Sequence Read Archive (Bioproject: PRJNA884756).
@@ -63,7 +63,7 @@ Below are the column names for each of the raw data files include in the analysi
 - *cap_doy*: the Julian day of the year when the bird was captured
 - *Age*: age of bird in days
 
-## trescoi_2022_09r2.mapping_file.txt
+## trescoi_2025_10.mapping_file.txt
 
 - *SampleID*: sample well location in plate from when samples were submitted to the Cornell BRC and fecal sample ID number, with an "x" in between
 - *BarcodeSequence*: barcode assigned to each sample by Cornell BRC
@@ -74,11 +74,11 @@ Below are the column names for each of the raw data files include in the analysi
 - *DemuxReads*: number of reads in sample after demultiplexing and before denoising
 - *Treatment*: not applicable, residual column from AMPtk pipeline
 
-## trescoi_2022_09r2.cluster.otu_table.txt
+## trescoi_2025_10.cluster.otu_table.txt
 
 - Each column is a sampleID and each row is an ASV. The numbers in each cell indicate the number of reads of each ASV (row) in each sample (column).
 
-## trescoi_2022_09r2.cluster.taxonomy.txt
+## trescoi_2025_10.cluster.taxonomy.txt
 
 - *OTUID*: ASV ID number (assigned by AMPtk)
 - *taxonomy*: The taxonomic identification of the ASV. AMPtk outputs this as a long string of text and includes some additional information in the output; see AMPtk documentation for more information.

@@ -2,7 +2,7 @@
 # consequences of diet composition in a declining generalist aerial insectivore"
 
 # Written by: Jenny Uehling and Conor Taff
-# Last updated: 12/3/2023
+# Last updated: 11/4/2025
 # Run under R Studio with R version 4.3.1 on a Mac OS
 
 # This code takes the phyloseq object coi_ps2, created in data_filtering_script.R,
@@ -248,7 +248,7 @@ summary(mod)
 # as the ajdusted R-squared values are very high. There are big differences for
 # richness (number of families), but this is probably not as useful of a metric.
 
-# Simpson and Shannon are also very closely related (adjusted R-squared: 0.9344).
+# Simpson and Shannon are also very closely related (adjusted R-squared: 0.9315).
 # Use Simpson for future analyses. Save dataframe just with Simpson.
 
 alpha_div <- subset(alpha_div, select = c(sampleID, simpson_psmelt))

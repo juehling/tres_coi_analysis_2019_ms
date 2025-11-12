@@ -2,7 +2,7 @@
 # consequences of diet composition in a declining generalist aerial insectivore"
 
 # Written by: Jenny Uehling and Conor Taff
-# Last updated: 9/10/2024
+# Last updated: 11/4/2025
 # Run under R Studio with R version 4.3.1 on a Mac OS
 
 # This code takes the phyloseq object coi_ps2, created in data_filtering_script.R,
@@ -43,6 +43,8 @@ s_info <- read.csv("2_modified_data/s_info.csv")
 
 # Merge family to life history
 life_history_family <- read.csv(here("4_other_outputs", "unique_families_aquatic_terrestrial_IDs.csv")) # prepared outside of R
+# Note that this file includes the life history information for many arthropod families,
+# including some that were not found in these samples.
 
 # Join tax_table from coi_ps2 and family life history .csv
 otu_lh <- plyr::join(as.data.frame(tax_table(coi_ps2)), life_history_family, by = "family", type = "left")
@@ -104,7 +106,7 @@ depth_preprune <- data.frame(as(sample_data(coi_fam2), "data.frame"),
                                      TotalReads = sample_sums(coi_fam2), keep.rownames = TRUE)
 depth_preprune <- subset(depth_preprune, select = c(sampleID, Individual_Band, Age, Site, Nest, TotalReads)) # for readability
 
-# Remove ASVs with 10 or fewer reads across all samples
+# Remove OTUs with 10 or fewer reads across all samples
 coi_ps2 <- prune_taxa(taxa_sums(coi_fam2) > 10, coi_fam2) # Based on Hoenig et al. 2020 and Forsman et al. 2022
 
 # Remove samples with less than 100 total reads
@@ -230,7 +232,7 @@ family_raw <- merge(family_raw, life_history_family, by = "family", all.x = TRUE
 table(family_raw$life_history)
 
 # Calculate percent of families with "both" classification
-17/171
+16/161
 
 # Create data frame to store mean relative abundance information
 mean_rel_ab_families <- data.frame(matrix(NA, ncol = 2, nrow = length(family_raw$family)))
@@ -269,12 +271,12 @@ table(indiv_samples_adults$Freq)
 nestlings_samples_info <- samples_info[samples_info$Adult_or_Nestling == "Nestling" ,]
 table(nestlings_samples_info$Age)
 table(nestlings_samples_info$Age, nestlings_samples_info$Site)
-# Figure out how many samples were taken per box
+# Figure out how many boxes samples were taken from at each site
 nest_boxes <- nestlings_samples_info[c("Site", "site_box_year")]
 nest_boxes_unique <- unique(nest_boxes)
 table(nest_boxes_unique$Site)
 indiv_samples_nestlings <- as.data.frame(table(nestlings_samples_info$Individual_Band))
-table(indiv_samples_nestlings$Freq) # 151 + 25 = 176 banded nestlings with samples
+table(indiv_samples_nestlings$Freq) # 146 + 24 = 170 banded nestlings with samples
 
 # Plot Patterns: Taxonomic Groups ----------------------------------------------
 
@@ -441,7 +443,7 @@ ggsave(here("3_r_scripts/figs/figs_descriptive/common_families_rel_ab.pdf"), wid
 
 # Calculate percent aquatic & number of families in each sample ----------------
 
-## Percent aquatic using relative abundance ----------------------------------
+## Percent aquatic using relative abundance + number of families ----------------------------------
 # For this first calculation, we will also save the number of families per sample
 
 # Identify the unique samples
@@ -469,6 +471,11 @@ names(aquatic)[names(aquatic) == "X3"] <- "num_fam"
 
 # Add in sample information
 aquatic <- merge(aquatic, s_info, by = "sampleID", all.x = TRUE, all.y = FALSE)
+
+# Calculate the average, median and range for number of families per sample to report in manuscript
+mean(aquatic$num_fam)
+median(aquatic$num_fam)
+range(aquatic$num_fam)
 
 ## Percent aquatic using occurrence --------------------------------------------
 
@@ -629,5 +636,5 @@ ggsave(here("3_r_scripts/figs/figs_descriptive/Figure_S3_percent_aquatic_compare
 
 cor <- cor.test(aquatic$percent_aquatic_ra, aquatic$percent_aquatic_occ)
 cor
-# There is a low correlation between percent aquatic when calculated with relative
+# There is a weak correlation between percent aquatic when calculated with relative
 # abundance vs. occurrence.
