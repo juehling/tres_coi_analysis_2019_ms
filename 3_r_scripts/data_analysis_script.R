@@ -221,7 +221,7 @@ plot(aquatic$percent_aquatic_occ, aquatic$simpson_psmelt)
     plot(simulationOutput)
     testDispersion(simulationOutput)
     
-    # # ## Plot nestling fate ~ alpha diversity -- FIGURE 2 -----------------------
+    ### Plot nestling fate ~ alpha diversity -- FIGURE 2 -----------------------
     # # commented out because this takes a long time to run
     # # Create the same model without scaling simpson for ease of plotting
     # mod_div <- glmer(Nestling_Fate ~ simpson_psmelt + (1|exp_treat) + (1|site_box_year),
@@ -900,7 +900,7 @@ plot(aquatic$percent_aquatic_occ, aquatic$simpson_psmelt)
   emtrends(mod_div, pairwise ~ Capture_Number, var = "Mass", ddf = "Kenward-Roger")
   emmip(mod_div, Capture_Number ~ Mass, cov.reduce = range, ddf = "Kenward-Roger")
   
-  # # Plot adult diversity ~ mass + stage -- FIGURE 4 ---------------------------------------
+  ## Plot adult diversity ~ mass + stage -- FIGURE 4 ---------------------------------------
   # # commented out because this takes a long time to run
   # # Create the same model without scaling simpson for ease of plotting
   # mod_div <- lmer(simpson_psmelt ~ Site + Flat_Wing + Mass*Capture_Number + (1|exp_treat) + (1|site_box_year),
