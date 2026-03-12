@@ -2,7 +2,7 @@
 # declining generalist aerial insectivore"
 
 # Written by: Jenny Uehling and Conor Taff
-# Last updated: 11/12/2025
+# Last updated: 3/5/2026
 # Run under R Studio 4.3.1 on a Mac OS
 
 # This is the main analysis script for analyzing data after processing them
@@ -210,6 +210,9 @@ plot(aquatic$percent_aquatic_occ, aquatic$simpson_psmelt)
     str(aquatic_n_day12_binary$percent_aquatic_occ)
     str(aquatic_n_day12_binary$exp_treat)
     str(aquatic_n_day12_binary$site_box_year)
+    
+    # Determine the number fledged and number died
+    table(aquatic_n_day12_binary$Nestling_Fate)
 
     ### Model for nestling fate ~ alpha diversity ------------------------------
     mod_div <- glmer(Nestling_Fate ~ scale(simpson_psmelt) + (1|exp_treat) + (1|site_box_year), 
@@ -394,6 +397,9 @@ plot(aquatic$percent_aquatic_occ, aquatic$simpson_psmelt)
     str(aquatic_n_day15_binary$percent_aquatic_occ)
     str(aquatic_n_day15_binary$Site)
     str(aquatic_n_day15_binary$site_box_year)
+    
+    # Determine the number fledged and number died
+    table(aquatic_n_day15_binary$Nestling_Fate)
 
     ### Model for nestling fate ~ alpha diversity --------------------------------
     mod_div <- glmer(Nestling_Fate ~ scale(simpson_psmelt) + (1|exp_treat), 
@@ -643,7 +649,7 @@ plot(aquatic$percent_aquatic_occ, aquatic$simpson_psmelt)
                      ncol = 1, 
                      align = "h")
   
-  fig_3 <- annotate_figure(fig_3, left = textGrob("Proportion of nestling diet composed of aquatic insects", rot = 90, vjust = 1, gp = gpar(cex = 1.75)))
+  fig_3 <- annotate_figure(fig_3, left = textGrob("Proportion of nestling diet composed of aquatic arthropods", rot = 90, vjust = 1, gp = gpar(cex = 1.75)))
   
   fig_3
   
@@ -1049,66 +1055,6 @@ plot(aquatic$percent_aquatic_occ, aquatic$simpson_psmelt)
   summary(mod_occ, ddf = "Kenward-Roger")
   anova(mod_occ, ddf = "Kenward-Roger")
   tab_model(mod_occ, p.val = "kr", show.df = TRUE, file = here("3_r_scripts/model_outputs/model_outputs_occurrence/Table_S11_ad_phen_ad_diet_tab_mod_occ_mass_change.html"))
-  
-# How do male and female diets differ? -----------------------------------------
-  
-  ## Prepare data frame for modeling and plotting ------------------------------
-  aquatic_prov_adF <- aquatic[aquatic$Adult_or_Nestling == "Adult" & aquatic$Sex == "F" ,] # Select females
-  aquatic_prov_adF <- aquatic_prov_adF[aquatic_prov_adF$Capture_Number == "3" ,] # Select females from third capture only (during provisioning)
-  aquatic_prov_adM <- aquatic[aquatic$Adult_or_Nestling == "Adult" & aquatic$Sex == "M" ,] # Select males
-  
-  adults_compare <- rbind(aquatic_prov_adF, aquatic_prov_adM)
-  adults_compare <- adults_compare[adults_compare$Site == "Unit_1" | adults_compare$Site == "Unit_2" ,]
-  
-  # Use gtools package to perform a logit transformation on percentage data
-  adults_compare$percent_aquatic_ra_logit <- gtools::logit(adults_compare$percent_aquatic_ra, min = -0.0001, max = 1.0001)
-  adults_compare$percent_aquatic_occ_logit <- gtools::logit(adults_compare$percent_aquatic_occ, min = -0.0001, max = 1.0001)
-  
-  # Remove male 259122557's first sample (P19N008) from analyses because he was accidentally captured during incubation
-  adults_compare <- adults_compare[adults_compare$sampleID != "P19N008" ,]
-
-  str(adults_compare$simpson_psmelt)
-  str(adults_compare$percent_aquatic_ra_logit)
-  str(adults_compare$percent_aquatic_occ_logit)
-  str(adults_compare$Sex)
-  str(adults_compare$site_box_year)
-  
-  ## Model for alpha diversity ~ sex -------------------------------------------
-  mod_div <- lmer(simpson_psmelt ~ Sex + (1|exp_treat) + (1|site_box_year), data = adults_compare)
-  summary(mod_div, ddf = "Kenward-Roger")
-  anova(mod_div, ddf = "Kenward-Roger")
-  # Checking conditions
-  hist(resid(mod_div))
-  plot(mod_div)
-  
-  ## Model for percent aquatic, relative abundance ~ Sex -----------------------
-  mod_ra <- lmer(percent_aquatic_ra_logit ~ Sex + (1|exp_treat) + (1|site_box_year), data = adults_compare) 
-  summary(mod_ra, ddf = "Kenward-Roger")
-  anova(mod_ra, ddf = "Kenward-Roger")
-  # Checking conditions
-  hist(resid(mod_ra))
-  plot(mod_ra)
-  
-  # Plot percent aquatic, relative abundance ~ Sex
-  p_ra <- ggplot(adults_compare) +
-    geom_boxplot(width = 0.5, (aes(x=Sex, y=percent_aquatic_ra))) + 
-    facet_wrap(~ Site) +
-    xlab("Sex") +
-    ylab("Proportion of adult diet composed of aquatic insects") +
-    theme_classic() +
-    theme(axis.title = element_text(size = 26)) + theme(axis.text.x = element_text(size = 26), 
-                                                        axis.text.y = element_text(size = 18)) +
-    theme(legend.position = "none") +
-    theme(strip.text = element_text(size = 24))
-  p_ra
-
-  ## Model for percent aquatic, occurrence ~ Sex -------------------------------
-  mod_occ <- lmer(percent_aquatic_occ_logit ~ Sex + (1|exp_treat) + (1|site_box_year), data = adults_compare)
-  summary(mod_occ, ddf = "Kenward-Roger")
-  anova(mod_occ, ddf = "Kenward-Roger")
-  # Checking conditions
-  hist(resid(mod_occ))
-  plot(mod_occ)
 
 # Do adults and nestlings differ in their diet variation? ----------------------
   
